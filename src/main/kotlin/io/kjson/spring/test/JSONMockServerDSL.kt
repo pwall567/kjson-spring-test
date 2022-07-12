@@ -36,6 +36,7 @@ import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.ResponseActions
 import org.springframework.test.web.client.match.MockRestRequestMatchers
+import org.springframework.web.util.UriComponentsBuilder
 
 import io.kjson.test.JSONExpect
 import io.kjson.test.JSONExpect.Companion.expectJSON
@@ -49,11 +50,15 @@ import io.kjson.test.JSONExpect.Companion.expectJSON
 class JSONMockServerDSL private constructor(private val request: MockClientHttpRequest) {
 
     fun requestTo(expectedURI: String) {
-        MockRestRequestMatchers.requestTo(expectedURI).match(request)
+        requestTo(URI(expectedURI))
     }
 
     fun requestTo(expectedURI: URI) {
-        MockRestRequestMatchers.requestTo(expectedURI).match(request)
+        val uri = request.uri
+        if (if (uri.isOpaque) uri.schemeSpecificPart != expectedURI.schemeSpecificPart else
+                uri.scheme != expectedURI.scheme || uri.userInfo != expectedURI.userInfo ||
+                        uri.port != expectedURI.port || uri.host != expectedURI.host || uri.path != expectedURI.path)
+            throw AssertionError("Request URI doesn't match; expected $expectedURI, was ${request.uri}")
     }
 
     fun requestTo(matcher: Matcher<in String>) {
@@ -61,11 +66,19 @@ class JSONMockServerDSL private constructor(private val request: MockClientHttpR
     }
 
     fun method(method: HttpMethod) {
-        MockRestRequestMatchers.method(method).match(request)
+        if (request.method != method)
+            throw AssertionError("Request method incorrect; expected $method, was ${request.method}")
     }
 
     fun queryParam(name: String, vararg expectedValues: String) {
-        MockRestRequestMatchers.queryParam(name, *expectedValues).match(request)
+        val queryParams = UriComponentsBuilder.fromUri(request.uri).build().queryParams
+        val param = queryParams[name] ?: throw AssertionError("Query param [$name] not found")
+        val n = expectedValues.size
+        if (param.size != n)
+            throw AssertionError("Query param [$name] number incorrect; expected $n, was ${param.size}")
+        for (i in 0 until n)
+            if (expectedValues[i] != param[i])
+                throw AssertionError("Query param [$name] incorrect; expected ${expectedValues[i]}, was ${param[i]}")
     }
 
     fun header(name: String, vararg expectedValues: String) {

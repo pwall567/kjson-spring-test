@@ -222,7 +222,7 @@ be shared by both libraries.
 
 ## Dependency Specification
 
-The latest version of the library is 3.2 (the version number of this library matches the version of `kjson` with which
+The latest version of the library is 3.2.1 (the version number of this library matches the version of `kjson` with which
 it was built), and it may be obtained from the Maven Central repository.
 (The following dependency declarations assume that the library will be included for test purposes; this is
 expected to be its principal use.)
@@ -232,19 +232,19 @@ expected to be its principal use.)
     <dependency>
       <groupId>io.kjson</groupId>
       <artifactId>kjson-spring</artifactId>
-      <version>3.2</version>
+      <version>3.2.1</version>
       <scope>test</scope>
     </dependency>
 ```
 ### Gradle
 ```groovy
-    testImplementation 'io.kjson:kjson-spring:3.2'
+    testImplementation 'io.kjson:kjson-spring:3.2.1'
 ```
 ### Gradle (kts)
 ```kotlin
-    testImplementation("io.kjson:kjson-spring:3.2")
+    testImplementation("io.kjson:kjson-spring:3.2.1")
 ```
 
 Peter Wall
 
-2022-07-10
+2022-07-12
