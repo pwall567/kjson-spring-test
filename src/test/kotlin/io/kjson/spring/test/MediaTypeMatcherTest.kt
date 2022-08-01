@@ -1,5 +1,5 @@
 /*
- * @(#) JSONMockResponseTest.kt
+ * @(#) MediaTypeMatcherTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2022 Peter Wall
@@ -26,34 +26,25 @@
 package io.kjson.spring.test
 
 import kotlin.test.Test
-import kotlin.test.expect
-import java.time.LocalDate
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import org.springframework.http.MediaType
 
-import org.junit.runner.RunWith
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.HttpMethod
-import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.web.client.RestTemplate
-import org.springframework.web.client.getForObject
+class MediaTypeMatcherTest {
 
-import io.kjson.spring.test.JSONMockServerDSL.Companion.mock
+    @Test fun `should match valid MediaType`() {
+        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
+        assertTrue(mediaTypeMatcher.matches(MediaType.APPLICATION_JSON_VALUE))
+    }
 
-@RunWith(SpringRunner::class)
-@SpringBootTest(classes = [TestConfiguration::class])
-class JSONMockResponseTest {
+    @Test fun `should reject invalid MediaType`() {
+        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
+        assertFalse(mediaTypeMatcher.matches("COMPLETELY_WRONG"))
+    }
 
-    @Test fun `should use respondJSON to format response`() {
-        val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
-            requestTo("/testendpoint")
-            method(HttpMethod.GET)
-        }.respondJSON {
-            ResponseData(date = LocalDate.of(2022, 7, 6), extra = "OK")
-        }
-        val response = restTemplate.getForObject<String>("/testendpoint")
-        expect("""{"date":"2022-07-06","extra":"OK"}""") { response }
+    @Test fun `should reject valid but incorrect MediaType`() {
+        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
+        assertFalse(mediaTypeMatcher.matches(MediaType.TEXT_PLAIN_VALUE))
     }
 
 }

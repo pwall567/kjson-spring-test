@@ -43,7 +43,11 @@ class MediaTypeMatcher(private val mediaType: MediaType) : BaseMatcher<String>()
     override fun matches(actual: Any?): Boolean {
         if (actual !is String)
             return false
-        val actualMediaType: MediaType = MediaType.parseMediaType(actual)
+        val actualMediaType: MediaType = try {
+            MediaType.parseMediaType(actual)
+        } catch (_: Exception) {
+            return false
+        }
         return actualMediaType.equalsTypeAndSubtype(mediaType)
     }
 

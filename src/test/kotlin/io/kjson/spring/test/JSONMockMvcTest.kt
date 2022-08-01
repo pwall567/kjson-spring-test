@@ -26,6 +26,7 @@
 package io.kjson.spring.test
 
 import kotlin.test.Test
+import java.net.URI
 
 import java.time.LocalDate
 import java.util.UUID
@@ -57,6 +58,16 @@ class JSONMockMvcTest {
         }
     }
 
+    @Test fun `should use getJSON using URI`() {
+        mockMvc.getForJSON(URI("/testendpoint")).andExpect {
+            status { isOk() }
+            contentMatchesJSON {
+                property("date", LocalDate.of(2022, 7, 6))
+                property("extra", "Hello!")
+            }
+        }
+    }
+
     @Test fun `should use getJSON with headers`() {
         mockMvc.getForJSON("/testheaders") {
             header("testheader1", "value1")
@@ -73,6 +84,20 @@ class JSONMockMvcTest {
 
     @Test fun `should use postJSON`() {
         mockMvc.postForJSON("/testendpoint") {
+            contentJSON {
+                RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
+            }
+        }.andExpect {
+            status { isOk() }
+            contentMatchesJSON {
+                property("date", LocalDate.of(2022, 7, 6))
+                property("extra", "50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6|Mary")
+            }
+        }
+    }
+
+    @Test fun `should use postJSON using URI`() {
+        mockMvc.postForJSON(URI("/testendpoint")) {
             contentJSON {
                 RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
             }

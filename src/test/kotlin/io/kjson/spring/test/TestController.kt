@@ -47,6 +47,14 @@ class TestController {
         )
     }
 
+    @GetMapping("/testendpoint2", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getDummyData2(): ResponseData {
+        return ResponseData(
+            date = LocalDate.of(2022, 7, 14),
+            extra = "Goodbye!",
+        )
+    }
+
     @PostMapping("/testendpoint")
     fun dummyPost(
         @RequestBody requestData: RequestData,

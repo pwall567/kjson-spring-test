@@ -112,7 +112,7 @@ testing uses the same library for matching the requests.
 ### `mock`, `mockGet`, `mockPost`
 
 The Spring class `MockRestServiceServer` provides facilities for testing REST clients, but the conventional use of this
-class involves a chain of "fluent" function calls., using `MockRestRequestMatchers` static functions.
+class involves a chain of "fluent" function calls, using `MockRestRequestMatchers` static functions.
 The `kjson-spring-test` library provides a DSL-based approach to client testing.
 
 The `mock` extension function for `MockRestServiceServer` allows mock requests to be declared in a Kotlin idiomatic
@@ -144,18 +144,25 @@ There are also additional functions related to the use of JSON.
 
 The following functions are available:
 
-| Name                    | Parameter(s)                       | Description                                                       |
-|-------------------------|------------------------------------|-------------------------------------------------------------------|
-| `requestTo`             | `String`                           | Matches the URI by string                                         |
-| `requestTo`             | `URI`                              | Matches the URI                                                   |
-| `requestTo`             | `Matcher<String>`                  | Matches the URI using a `Matcher`                                 |
-| `method`                | `HttpMethod`                       | Matches the method                                                |
-| `queryParam`            | `String`, `vararg String`          | Matches a named query parameter against a set of values           |
-| `header`                | `String`, `vararg String`          | Matches a named header against a set of values                    |
-| `header`                | `String`, `vararg Matcher<String>` | Matches a named header against a set of values using `Matcher`s   |
-| `acceptApplicationJSON` |                                    | Matches the `Accept` header as compatible with `application/json` |
-| `headerDoesNotExist`    | `String`                           | Expects the named header to not be present                        |
-| `requestJSON`           | lambda - see below                 | Matches the request body using the `kjson-test` library           |
+| Name                         | Parameter(s)                       | Description                                                             |
+|------------------------------|------------------------------------|-------------------------------------------------------------------------|
+| `requestTo`                  | `String`                           | Matches the URI by string                                               |
+| `requestTo`                  | `URI`                              | Matches the URI                                                         |
+| `requestTo`                  | `(String) -> Boolean`              | Matches the URI using a lambda                                          |
+| `requestTo`                  | `Matcher<String>`                  | Matches the URI using a `Matcher`                                       |
+| `method`                     | `HttpMethod`                       | Matches the method                                                      |
+| `queryParam`                 | `String`, `vararg String`          | Matches a named query parameter against a set of values                 |
+| `header`                     | `String`, `vararg String`          | Matches a named header against a set of values                          |
+| `header`                     | `String`, `(String) -> Boolean`    | Matches a named header using a lambda                                   |
+| `header`                     | `String`, `vararg Matcher<String>` | Matches a named header against a set of values using `Matcher`s         |
+| `accept`                     | `MediaType`                        | Matches the `Accept` header with the specified `MediaType`              |
+| `acceptApplicationJSON`      |                                    | Matches the `Accept` header as compatible with `application/json`       |
+| `contentType`                | `MediaType`                        | Matches the `Content-Type` header with the specified `MediaType`        |
+| `contentTypeApplicationJSON` |                                    | Matches the `Content-Type` header as compatible with `application/json` |
+| `headerDoesNotExist`         | `String`                           | Expects the named header to not be present                              |
+| `requestContent`             | `String`                           | Matches the request body against a `String`                             |
+| `requestContent`             | `(String) -> Boolean`              | Matches the request body using a lambda                                 |
+| `requestJSON`                | lambda - see below                 | Matches the request body using the `kjson-test` library                 |
 
 The `requestJSON` function allows the request body to be matched using the
 [`kjson-test`](https://github.com/pwall567/kjson-test) library.
@@ -247,4 +254,4 @@ expected to be its principal use.)
 
 Peter Wall
 
-2022-07-12
+2022-08-01

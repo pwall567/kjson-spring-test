@@ -35,18 +35,14 @@ import net.pwall.json.validation.JSONValidation
  *
  * @author  Peter Wall
  */
-class UUIDMatcher : BaseMatcher<String>() {
+object UUIDMatcher : BaseMatcher<String>() {
 
     override fun describeTo(description: Description) {
-        description.appendText("valid Media Type")
+        description.appendText("valid UUID")
     }
 
     override fun matches(actual: Any?) = actual is String && JSONValidation.isUUID(actual)
 
-    companion object {
-
-        fun isValidUUID() = UUIDMatcher()
-
-    }
+    fun isValidUUID() = UUIDMatcher
 
 }
