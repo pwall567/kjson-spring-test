@@ -5,9 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 The major and minor version numbers of this repository (but not patch numbers) match the version numbers of the
 [`kjson`](https://github.com/pwall567/kjson) library used by this Spring library.
 
-## [Unreleased]
-### Added
+## [3.2.2] - 2022-08-01
+### Changed
 - `JSONMockServerDSL`: reorganised code, added use of lambdas for tests and deprecated use of `Matcher`
+- `JSONMockServerDSL`: added `respond` and `respondJSON` functions
 
 ## [3.2.1] - 2022-07-12
 ### Added

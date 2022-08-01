@@ -40,12 +40,14 @@ import org.junit.runner.RunWith
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.RequestEntity
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
+import org.springframework.web.client.getForEntity
 import org.springframework.web.client.getForObject
 import org.springframework.web.client.postForObject
 
@@ -496,6 +498,60 @@ class JSONMockServerDSLTest {
         assertFailsWith<java.lang.AssertionError> { restTemplate.exchange<String>(requestEntity) }.let {
             expect("Request [X-Test-1] header expected not to be present") { it.message }
         }
+    }
+
+    @Test fun `should match simple mock request and respond using new syntax`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respondJSON(result = ResponseData(date = LocalDate.of(2022, 7, 12), extra = "XXX"))
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint")
+        expect("""{"date":"2022-07-12","extra":"XXX"}""") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond using new syntax with lambda`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo { it.startsWith("/testendpoint/") }
+            method(HttpMethod.GET)
+            respondJSON {
+                ResponseData(date = LocalDate.of(2022, 7, 12), extra = uri.path.substringAfterLast('/'))
+            }
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint/works")
+        expect("""{"date":"2022-07-12","extra":"works"}""") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond using new syntax with string`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respond(result = "OK!")
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint")
+        expect("OK!") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond using new syntax with status only`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respond(HttpStatus.CREATED)
+        }
+        val response = restTemplate.getForEntity<Unit>("/testendpoint")
+        expect(HttpStatus.CREATED) { response.statusCode }
+        mockRestServiceServer.verify()
     }
 
     @Test fun `should match multiple requests in sequence`() {

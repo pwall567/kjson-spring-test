@@ -31,14 +31,19 @@ import org.hamcrest.Matcher
 import org.hamcrest.MatcherAssert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.client.ClientHttpRequest
+import org.springframework.http.client.ClientHttpResponse
 import org.springframework.mock.http.client.MockClientHttpRequest
+import org.springframework.mock.http.client.MockClientHttpResponse
 import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.ResponseActions
+import org.springframework.test.web.client.ResponseCreator
 
+import io.kjson.stringifyJSON
 import io.kjson.test.JSONExpect
-import io.kjson.test.JSONExpect.Companion.expectJSON
 
 /**
  * A DSL class to assist with setting up [MockRestServiceServer] configurations.  Instances of this class are created by
@@ -46,7 +51,9 @@ import io.kjson.test.JSONExpect.Companion.expectJSON
  *
  * @author  Peter Wall
  */
-class JSONMockServerDSL private constructor(private val request: MockClientHttpRequest) {
+class JSONMockServerDSL private constructor() : ResponseCreator {
+
+    private lateinit var request: MockClientHttpRequest
 
     fun requestTo(expectedURI: String) {
         requestTo(URI(expectedURI))
@@ -160,8 +167,47 @@ class JSONMockServerDSL private constructor(private val request: MockClientHttpR
 
     fun requestJSON(tests: JSONExpect.() -> Unit) {
         contentTypeApplicationJSON()
-        expectJSON(request.bodyAsString, tests)
+        JSONExpect.expectJSON(request.bodyAsString, tests)
     }
+
+    private var response: Response? = null
+
+    fun respondJSON(
+        status: HttpStatus = HttpStatus.OK,
+        headers: HttpHeaders? = null,
+        block: MockClientHttpRequest.() -> Any?
+    ) {
+        respondJSON(status, headers, request.block())
+    }
+
+    fun respondJSON(
+        status: HttpStatus = HttpStatus.OK,
+        headers: HttpHeaders? = null,
+        result: Any?,
+    ) {
+        val headers1 = HttpHeaders()
+        headers?.let { headers1.addAll(it) }
+        headers1.contentType = MediaType.APPLICATION_JSON
+        respond(status, headers1, result.stringifyJSON(JSONTestConfig.config))
+    }
+
+    fun respond(
+        status: HttpStatus = HttpStatus.OK,
+        headers: HttpHeaders? = null,
+        result: String? = null,
+    ) {
+        response = Response(status, headers, result)
+    }
+
+    @Suppress("WRONG_NULLABILITY_FOR_JAVA_OVERRIDE")
+    override fun createResponse(request: ClientHttpRequest?): ClientHttpResponse? {
+        return response?.let { resp ->
+            val body = resp.body?.toByteArray() ?: ByteArray(0)
+            MockClientHttpResponse(body, resp.status).apply { resp.headers?.let { headers.addAll(it) } }
+        }
+    }
+
+    data class Response(val status: HttpStatus, val headers: HttpHeaders?, val body: String?)
 
     companion object {
 
@@ -187,13 +233,20 @@ class JSONMockServerDSL private constructor(private val request: MockClientHttpR
             uri: URI? = null,
             block: JSONMockServerDSL.() -> Unit = {}
         ): ResponseActions {
-            return expect(expectedCount) { request ->
-                JSONMockServerDSL(request as MockClientHttpRequest).apply {
+            val serverDSL = JSONMockServerDSL()
+            val responseActions = expect(expectedCount) { request ->
+                serverDSL.request = request as MockClientHttpRequest
+                serverDSL.apply {
                     method?.let { method(it) }
                     uri?.let { requestTo(it) }
                     block()
                 }
             }
+            responseActions.andRespond(serverDSL)
+            // NOTE: this works only because Spring does not complain when createResponse() returns null (see above)
+            // If that ever changes, we may need to enforce the use of the respondJSON and respond functions in this
+            // class and remove the ability to use a chained andRespond() on the result of mock()
+            return responseActions
         }
 
         fun MockRestServiceServer.mockGet(

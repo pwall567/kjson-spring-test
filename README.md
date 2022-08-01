@@ -144,25 +144,28 @@ There are also additional functions related to the use of JSON.
 
 The following functions are available:
 
-| Name                         | Parameter(s)                       | Description                                                             |
-|------------------------------|------------------------------------|-------------------------------------------------------------------------|
-| `requestTo`                  | `String`                           | Matches the URI by string                                               |
-| `requestTo`                  | `URI`                              | Matches the URI                                                         |
-| `requestTo`                  | `(String) -> Boolean`              | Matches the URI using a lambda                                          |
-| `requestTo`                  | `Matcher<String>`                  | Matches the URI using a `Matcher`                                       |
-| `method`                     | `HttpMethod`                       | Matches the method                                                      |
-| `queryParam`                 | `String`, `vararg String`          | Matches a named query parameter against a set of values                 |
-| `header`                     | `String`, `vararg String`          | Matches a named header against a set of values                          |
-| `header`                     | `String`, `(String) -> Boolean`    | Matches a named header using a lambda                                   |
-| `header`                     | `String`, `vararg Matcher<String>` | Matches a named header against a set of values using `Matcher`s         |
-| `accept`                     | `MediaType`                        | Matches the `Accept` header with the specified `MediaType`              |
-| `acceptApplicationJSON`      |                                    | Matches the `Accept` header as compatible with `application/json`       |
-| `contentType`                | `MediaType`                        | Matches the `Content-Type` header with the specified `MediaType`        |
-| `contentTypeApplicationJSON` |                                    | Matches the `Content-Type` header as compatible with `application/json` |
-| `headerDoesNotExist`         | `String`                           | Expects the named header to not be present                              |
-| `requestContent`             | `String`                           | Matches the request body against a `String`                             |
-| `requestContent`             | `(String) -> Boolean`              | Matches the request body using a lambda                                 |
-| `requestJSON`                | lambda - see below                 | Matches the request body using the `kjson-test` library                 |
+| Name                         | Parameter(s)                               | Description                                                             |
+|------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
+| `requestTo`                  | `String`                                   | Matches the URI by string                                               |
+| `requestTo`                  | `URI`                                      | Matches the URI                                                         |
+| `requestTo`                  | `(String) -> Boolean`                      | Matches the URI using a lambda                                          |
+| `requestTo`                  | `Matcher<String>`                          | Matches the URI using a `Matcher`                                       |
+| `method`                     | `HttpMethod`                               | Matches the method                                                      |
+| `queryParam`                 | `String`, `vararg String`                  | Matches a named query parameter against a set of values                 |
+| `header`                     | `String`, `vararg String`                  | Matches a named header against a set of values                          |
+| `header`                     | `String`, `(String) -> Boolean`            | Matches a named header using a lambda                                   |
+| `header`                     | `String`, `vararg Matcher<String>`         | Matches a named header against a set of values using `Matcher`s         |
+| `accept`                     | `MediaType`                                | Matches the `Accept` header with the specified `MediaType`              |
+| `acceptApplicationJSON`      |                                            | Matches the `Accept` header as compatible with `application/json`       |
+| `contentType`                | `MediaType`                                | Matches the `Content-Type` header with the specified `MediaType`        |
+| `contentTypeApplicationJSON` |                                            | Matches the `Content-Type` header as compatible with `application/json` |
+| `headerDoesNotExist`         | `String`                                   | Expects the named header to not be present                              |
+| `requestContent`             | `String`                                   | Matches the request body against a `String`                             |
+| `requestContent`             | `(String) -> Boolean`                      | Matches the request body using a lambda                                 |
+| `requestJSON`                | lambda - see below                         | Matches the request body using the `kjson-test` library                 |
+| `respond`                    | `HttpStatus`, `HttpHeaders?`, `String`     | Supplies the status, headers and a result string to send as a response  |
+| `respondJSON`                | `HttpStatus`, `HttpHeaders?`, `Any?`       | As above, but the result object is converted to JSON for output         |
+| `respondJSON`                | `HttpStatus`, `HttpHeaders?`, `() -> Any?` | As above, but the lambda is called to create the result object          |
 
 The `requestJSON` function allows the request body to be matched using the
 [`kjson-test`](https://github.com/pwall567/kjson-test) library.
@@ -180,20 +183,37 @@ For example:
 See the documentation for [`kjson-test`](https://github.com/pwall567/kjson-test) for more details on the matching
 capabilities available using that library.
 
-### `respondJSON`
-
-To configure the mock operation to respond with a JSON object serialized by the `kjson` library, just use the
-`.respondJSON` function in place of the `.andRespond` function:
+The `respond` and `respondJSON` functions allow the specification of the mock response.
+In the case of `respond`, the result may be supplied as a `String`, or may be omitted, as might be appropriate for
+status code 204 (No Content).
 ```kotlin
-    mockRestServiceServer.mockGet {
+    mockRestServiceServer.mock {
         requestTo("/endpoint")
-    }.respondJSON {
-        ResponseData(date = LocalDate.now(), extra = "XYZ")
+        method(HttpMethod.GET)
+        respond(HttpStatus.NO_CONTENT)
     }
 ```
 
-The last parameter of the function is a lambda which will be evaluated to create the response object; this object will
-then be serialized using the `kjson` library.
+The full set of parameters for `respond` is:
+
+| Name      | Type          | Default          | Description                                       |
+|-----------|---------------|------------------|---------------------------------------------------|
+| `status`  | `HttpStatus`  | `HttpStatus.GET` | The status to be returned                         |
+| `headers` | `HttpHeaders` | empty list       | The headers to be added to the response           |
+| `result`  | `String?`     | `null`           | The result as a `String` (`null` means no result) |
+
+The `respondJSON` function allows the specification of a result object that will be serialised to JSON, and in the case
+of the form that takes a lambda parameter, the `MockClientHttpRequest` describing the request will be supplied as the
+receiver object, allowing the use of data from the request in the creation of the response:
+```kotlin
+    mockRestServiceServer.mock {
+        requestTo { it.startsWith("/testendpoint/") }
+        method(HttpMethod.GET)
+        respondJSON {
+            ResponseData(LocalDate.now(), uri.path.substringAfterLast('/'))
+        }
+    }
+```
 
 The `kjson` serialization will use the `JSONConfig` configuration as described [below](#configuration).
 
@@ -204,6 +224,22 @@ The full set of parameters for `respondJSON` is:
 | `status`  | `HttpStatus`  | `HttpStatus.GET` | The status to be returned                |
 | `headers` | `HttpHeaders` | empty list       | The headers to be added to the response  |
 | `block`   | lambda        | none             | The lambda to create the response object |
+
+### `ResponseActions.respondJSON`
+
+As an alternative to the use of the `respondJSON` function above, the library provides an extension function for
+`ResponseActions` of the same name, and this may be chained onto the result of the `mock` function.
+This function takes the same parameters, but it differs in that the lambda that creates the response object does not
+have access to the `MockClientHttpRequest`.
+
+To configure the mock operation to respond with a JSON object:
+```kotlin
+    mockRestServiceServer.mockGet {
+        requestTo("/endpoint")
+    }.respondJSON {
+        ResponseData(date = LocalDate.now(), extra = "XYZ")
+    }
+```
 
 ## Configuration
 
@@ -229,27 +265,29 @@ be shared by both libraries.
 
 ## Dependency Specification
 
-The latest version of the library is 3.2.1 (the version number of this library matches the version of `kjson` with which
+The latest version of the library is 3.2.2 (the version number of this library matches the version of `kjson` with which
 it was built), and it may be obtained from the Maven Central repository.
 (The following dependency declarations assume that the library will be included for test purposes; this is
 expected to be its principal use.)
+
+This version was built using version 5.3.20 of Spring, and version 2.7.0 of Spring Boot.
 
 ### Maven
 ```xml
     <dependency>
       <groupId>io.kjson</groupId>
       <artifactId>kjson-spring</artifactId>
-      <version>3.2.1</version>
+      <version>3.2.2</version>
       <scope>test</scope>
     </dependency>
 ```
 ### Gradle
 ```groovy
-    testImplementation 'io.kjson:kjson-spring:3.2.1'
+    testImplementation 'io.kjson:kjson-spring:3.2.2'
 ```
 ### Gradle (kts)
 ```kotlin
-    testImplementation("io.kjson:kjson-spring:3.2.1")
+    testImplementation("io.kjson:kjson-spring:3.2.2")
 ```
 
 Peter Wall
