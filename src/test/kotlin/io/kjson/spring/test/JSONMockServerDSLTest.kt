@@ -44,6 +44,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.RequestEntity
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
@@ -236,6 +237,36 @@ class JSONMockServerDSLTest {
         }
         assertFailsWith<AssertionError> { restTemplate.getForObject<String>("/testendpoint?param1=xyz") }.let {
             expect("Request query param [param1] incorrect; expected abc, was xyz") { it.message }
+        }
+    }
+
+    @Test fun `should match mock request with query param using lambda`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            queryParam("uuid") { UUIDMatcher.isValidUUID(it) }
+        }.respondJSON {
+            ResponseData(date = LocalDate.of(2022, 7, 12), extra = "OK")
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint?uuid=9ee826a8-13d9-11ed-9752-672495249b25")
+        expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should fail to match mock request with query param using lambda`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            queryParam("uuid") { UUIDMatcher.isValidUUID(it) }
+        }.respondJSON {
+            ResponseData(date = LocalDate.of(2022, 7, 12), extra = "OK")
+        }
+        assertFailsWith<AssertionError> { restTemplate.getForObject<String>("/testendpoint?uuid=not-a-uuid") }.let {
+            expect("Request query param [uuid] incorrect") { it.message }
         }
     }
 
@@ -513,17 +544,17 @@ class JSONMockServerDSLTest {
         mockRestServiceServer.verify()
     }
 
-    @Test fun `should match simple mock request and respond using new syntax with lambda`() {
+    @Test fun `should match simple mock request and respond using new syntax with JSON lambda`() {
         val restTemplate = RestTemplate()
         val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
         mockRestServiceServer.mock {
-            requestTo { it.startsWith("/testendpoint/") }
+            requestTo { it.startsWith("/testendpoint") }
             method(HttpMethod.GET)
             respondJSON {
-                ResponseData(date = LocalDate.of(2022, 7, 12), extra = uri.path.substringAfterLast('/'))
+                ResponseData(date = LocalDate.of(2022, 7, 12), extra = getParam("it").toString())
             }
         }
-        val response = restTemplate.getForObject<String>("/testendpoint/works")
+        val response = restTemplate.getForObject<String>("/testendpoint?it=works")
         expect("""{"date":"2022-07-12","extra":"works"}""") { response }
         mockRestServiceServer.verify()
     }
@@ -541,6 +572,19 @@ class JSONMockServerDSLTest {
         mockRestServiceServer.verify()
     }
 
+    @Test fun `should match simple mock request and respond using new syntax with string lambda`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo { it.startsWith("/testendpoint") }
+            method(HttpMethod.GET)
+            respond { "${getParam("why")}" }
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint?why=not")
+        expect("not") { response }
+        mockRestServiceServer.verify()
+    }
+
     @Test fun `should match simple mock request and respond using new syntax with status only`() {
         val restTemplate = RestTemplate()
         val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
@@ -551,6 +595,88 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForEntity<Unit>("/testendpoint")
         expect(HttpStatus.CREATED) { response.statusCode }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond with fixed text`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respondTextPlain(result = "Good")
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint")
+        expect("Good") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond with dynamic text`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo { it.startsWith("/testendpoint") }
+            method(HttpMethod.GET)
+            respondTextPlain { "${getParam("it")}" }
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint?it=nice")
+        expect("nice") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond with fixed byte array`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respondBytes(result = "Better".toByteArray())
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint")
+        expect("Better") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should match simple mock request and respond with dynamic byte array`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respondBytes { "${getParam("it")}".toByteArray() }
+        }
+        val response = restTemplate.getForObject<String>("/testendpoint?it=very_nice")
+        expect("very_nice") { response }
+        mockRestServiceServer.verify()
+    }
+
+    @Test fun `should reject attempt to set response more than once`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mockGet {
+            requestTo("/testendpoint")
+            respondJSON {
+                ResponseData(date = LocalDate.of(2022, 8, 3), extra = getParam("it").toString())
+            }
+            respond(HttpStatus.OK)
+        }
+        assertFailsWith<AssertionError> { restTemplate.getForObject<String>("/testendpoint") }.let {
+            expect("Response already set") { it.message }
+        }
+    }
+
+    @Test fun `should match simple mock request with repetition`() {
+        val restTemplate = RestTemplate()
+        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
+        mockRestServiceServer.mock(ExpectedCount.manyTimes()) {
+            requestTo("/testendpoint")
+            method(HttpMethod.GET)
+            respondJSON {
+                ResponseData(date = LocalDate.of(2022, 7, 12), extra = getParam("a").toString())
+            }
+        }
+        expect("""{"date":"2022-07-12","extra":"XXX"}""") { restTemplate.getForObject("/testendpoint?a=XXX") }
+        expect("""{"date":"2022-07-12","extra":"YYY"}""") { restTemplate.getForObject("/testendpoint?a=YYY") }
         mockRestServiceServer.verify()
     }
 

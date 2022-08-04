@@ -41,8 +41,10 @@ object UUIDMatcher : BaseMatcher<String>() {
         description.appendText("valid UUID")
     }
 
-    override fun matches(actual: Any?) = actual is String && JSONValidation.isUUID(actual)
+    override fun matches(actual: Any?) = actual is String && isValidUUID(actual)
 
     fun isValidUUID() = UUIDMatcher
+
+    fun isValidUUID(string: String): Boolean = JSONValidation.isUUID(string)
 
 }
