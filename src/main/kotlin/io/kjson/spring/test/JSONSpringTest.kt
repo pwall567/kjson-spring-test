@@ -1,8 +1,8 @@
 /*
- * @(#) JSONMockRequest.kt
+ * @(#) JSONSpringTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,22 +25,28 @@
 
 package io.kjson.spring.test
 
-import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockHttpServletRequestDsl
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
+import org.springframework.test.web.client.MockRestServiceServer
+import org.springframework.web.client.RestTemplate
 
-import io.kjson.stringifyJSON
-
-/**
- * Add JSON POST content to a `MockMvc` request.
- */
-fun MockHttpServletRequestDsl.contentJSON(data: Any?) {
-    contentType = MediaType.APPLICATION_JSON
-    content = data.stringifyJSON(JSONTestConfig.config)
-}
+import io.kjson.JSONConfig
 
 /**
- * Add JSON POST content to a `MockMvc` request, invoking a lambda to create to POST data.
+ * Entry point for `kjson-spring-test` client testing functions.  Includes function to create [JSONMockServer]
+ * instances.
+ *
+ * @author  Peter Wall
  */
-fun MockHttpServletRequestDsl.contentJSON(lambda: () -> Any?) {
-    contentJSON(lambda())
+@Component
+class JSONSpringTest(
+    @Autowired(required = false) autowiredConfig: JSONConfig?,
+) {
+
+    private val config: JSONConfig = autowiredConfig ?: JSONConfig.defaultConfig
+
+    fun createServer(restTemplate: RestTemplate): JSONMockServer {
+        return JSONMockServer(MockRestServiceServer.createServer(restTemplate), config)
+    }
+
 }

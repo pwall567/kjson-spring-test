@@ -1,5 +1,5 @@
 /*
- * @(#) ResponseData.kt
+ * @(#) UUIDMatcherTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2022 Peter Wall
@@ -23,11 +23,25 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.matchers
 
-import java.time.LocalDate
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-data class ResponseData(
-    val date: LocalDate,
-    val extra: String,
-)
+class UUIDMatcherTest {
+
+    @Test fun `should match valid UUID`() {
+        assertTrue(UUIDMatcher.matches("047f0902-034d-11ed-aa8b-1f435b59e616"))
+    }
+
+    @Test fun `should fail on invalid UUID`() {
+        assertFalse(UUIDMatcher.matches("047f0902-034d-11ed-aa8b-1f435b59e61")) // one character short
+    }
+
+    @Test fun `should match valid UUID using function`() {
+        val matcher = UUIDMatcher.isValidUUID()
+        assertTrue(matcher.matches("047f0902-034d-11ed-aa8b-1f435b59e616"))
+    }
+
+}

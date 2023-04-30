@@ -35,6 +35,9 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 
+import io.kjson.spring.test.data.RequestData
+import io.kjson.spring.test.data.ResponseData
+
 @RestController
 @Suppress("unused")
 class TestController {

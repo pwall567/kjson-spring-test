@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 The major and minor version numbers of this repository (but not patch numbers) match the version numbers of the
 [`kjson`](https://github.com/pwall567/kjson) library used by this Spring library.
 
+## [4.4] - 2023-04-30
+### Changed
+- many files: major re-work to solve problem of auto-wiring `JSONConfig`
+
 ## [3.2.5] - 2022-08-04
 ### Changed
 - `JSONMockServerDSL`: improved on previous bug fix

@@ -1,8 +1,8 @@
 /*
- * @(#) JSONMatcher.kt
+ * @(#) JSONMockMvcResultMatchersDSL.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,46 +23,33 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.matchers
 
-import org.hamcrest.BaseMatcher
-import org.hamcrest.Description
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.result.ContentResultMatchersDsl
-import org.springframework.test.web.servlet.MockMvcResultMatchersDsl
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
+import io.kjson.spring.test.JSONMockMvc
 import io.kjson.test.JSONExpect
 
 /**
- * A `Matcher` class that allows Spring `mockMvc` responses to be tested using the capabilities of the
- * [kjson-test](https://github.com/pwall567/kjson-test) library.
+ * DSL class to provide result matching functions for `MockMvc`.
  *
  * @author  Peter Wall
  */
-class JSONMatcher private constructor(private val tests: JSONExpect.() -> Unit) : BaseMatcher<String>() {
+class JSONMockMvcResultMatchersDSL(val resultActions: JSONMockMvc.JSONResultActions) {
 
-    override fun matches(actual: Any?): Boolean {
-        if (actual !is String)
-            return false
-        JSONExpect.expectJSON(actual, tests)
-        return true
+    fun status(dsl: JSONStatusResultMatchersDSL.() -> Unit) {
+        JSONStatusResultMatchersDSL(resultActions.mvcResult.response).dsl()
     }
 
-    override fun describeTo(description: Description) {
-        description.appendText("valid JSON")
+    fun content(dsl: JSONContentResultMatchersDSL.() -> Unit) {
+        JSONContentResultMatchersDSL(resultActions).dsl()
     }
 
-    companion object {
-
-        fun ContentResultMatchersDsl.matchesJSON(tests: JSONExpect.() -> Unit) = string(JSONMatcher(tests))
-
-        fun MockMvcResultMatchersDsl.contentMatchesJSON(tests: JSONExpect.() -> Unit) {
-            content {
-                contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-                matchesJSON(tests)
-            }
-        }
-
+    fun contentMatchesJSON(tests: JSONExpect.() -> Unit) {
+        MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON).
+                match(resultActions.mvcResult)
+        JSONExpect.expectJSON(resultActions.mvcResult.response.contentAsString, tests)
     }
 
 }

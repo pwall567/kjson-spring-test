@@ -1,8 +1,8 @@
 /*
- * @(#) JSONMockResponseTest.kt
+ * @(#) JSONMatcherTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2022, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,55 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.matchers
 
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
+
 import java.time.LocalDate
 
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.HttpMethod
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.web.client.RestTemplate
-import org.springframework.web.client.getForObject
 
-import io.kjson.spring.test.JSONMockServerDSL.Companion.mock
+import io.kjson.spring.JSONSpring
+import io.kjson.spring.test.JSONMockMvc
+import io.kjson.spring.test.TestConfiguration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
-class JSONMockResponseTest {
+@ComponentScan(basePackageClasses = [JSONSpring::class])
+class JSONMatcherTest {
 
-    @Test fun `should use respondJSON to format response`() {
-        val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
-            requestTo("/testendpoint")
-            method(HttpMethod.GET)
-        }.respondJSON {
-            ResponseData(date = LocalDate.of(2022, 7, 6), extra = "OK")
+    @Autowired lateinit var jsonMockMvc: JSONMockMvc
+
+    @Test fun `should validate JSON output`() {
+        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+            status { isOk() }
+            contentMatchesJSON {
+                property("date", LocalDate.of(2022, 7, 6))
+                property("extra", "Hello!")
+            }
         }
-        val response = restTemplate.getForObject<String>("/testendpoint")
-        expect("""{"date":"2022-07-06","extra":"OK"}""") { response }
+    }
+
+    @Test fun `should fail on incorrect JSON output`() {
+        assertFailsWith<AssertionError> {
+            jsonMockMvc.getForJSON("/testendpoint").andExpect {
+                status { isOk() }
+                content {
+                    matchesJSON {
+                        property("date", LocalDate.of(2022, 7, 6))
+                        property("extra", "Goodbye!")
+                    }
+                }
+            }
+        }.let {
+            expect("/extra: JSON value doesn't match - expected \"Goodbye!\", was \"Hello!\"") { it.message }
+        }
     }
 
 }

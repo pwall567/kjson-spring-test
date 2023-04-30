@@ -2,7 +2,7 @@
  * @(#) JSONMockMvcTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2022, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 
 package io.kjson.spring.test
 
+import io.kjson.spring.test.data.RequestData
 import kotlin.test.Test
 import java.net.URI
 
@@ -33,23 +34,29 @@ import java.util.UUID
 
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.web.servlet.MockMvc
-
-import io.kjson.spring.test.JSONMatcher.Companion.contentMatchesJSON
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
-@AutoConfigureMockMvc
 class JSONMockMvcTest {
 
-    @Autowired
-    lateinit var mockMvc: MockMvc
+    @Autowired lateinit var jsonMockMvc: JSONMockMvc
 
-    @Test fun `should use getJSON`() {
-        mockMvc.getForJSON("/testendpoint").andExpect {
+    @Test fun `should use JSONMockMvc`() {
+        jsonMockMvc.get("/testendpoint").andExpect {
+            status { isOk() }
+            content {
+                matchesJSON {
+                    property("date", LocalDate.of(2022, 7, 6))
+                    property("extra", "Hello!")
+                }
+            }
+        }
+    }
+
+    @Test fun `should use getForJSON`() {
+        jsonMockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             contentMatchesJSON {
                 property("date", LocalDate.of(2022, 7, 6))
@@ -58,8 +65,8 @@ class JSONMockMvcTest {
         }
     }
 
-    @Test fun `should use getJSON using URI`() {
-        mockMvc.getForJSON(URI("/testendpoint")).andExpect {
+    @Test fun `should use getForJSON using URI`() {
+        jsonMockMvc.getForJSON(URI("/testendpoint")).andExpect {
             status { isOk() }
             contentMatchesJSON {
                 property("date", LocalDate.of(2022, 7, 6))
@@ -69,7 +76,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use getJSON with headers`() {
-        mockMvc.getForJSON("/testheaders") {
+        jsonMockMvc.getForJSON("/testheaders") {
             header("testheader1", "value1")
         }.andExpect {
             status { isOk() }
@@ -83,7 +90,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use postJSON`() {
-        mockMvc.postForJSON("/testendpoint") {
+        jsonMockMvc.postForJSON("/testendpoint") {
             contentJSON {
                 RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
             }
@@ -97,10 +104,22 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use postJSON using URI`() {
-        mockMvc.postForJSON(URI("/testendpoint")) {
+        jsonMockMvc.postForJSON(URI("/testendpoint")) {
             contentJSON {
                 RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
             }
+        }.andExpect {
+            status { isOk() }
+            contentMatchesJSON {
+                property("date", LocalDate.of(2022, 7, 6))
+                property("extra", "50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6|Mary")
+            }
+        }
+    }
+
+    @Test fun `should use postJSON with automatic JSON conversion`() {
+        jsonMockMvc.postForJSON("/testendpoint") {
+            content = RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
         }.andExpect {
             status { isOk() }
             contentMatchesJSON {

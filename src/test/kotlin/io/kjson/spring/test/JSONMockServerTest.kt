@@ -1,8 +1,8 @@
 /*
- * @(#) JSONMockServerDSLTest.kt
+ * @(#) JSONMockServerTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2022, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@
 
 package io.kjson.spring.test
 
+import io.kjson.spring.test.data.RequestData
+import io.kjson.spring.test.data.ResponseData
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -37,6 +39,7 @@ import java.util.UUID
 
 import org.hamcrest.core.StringStartsWith
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -45,25 +48,24 @@ import org.springframework.http.MediaType
 import org.springframework.http.RequestEntity
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.client.ExpectedCount
-import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
 import org.springframework.web.client.getForEntity
 import org.springframework.web.client.getForObject
 import org.springframework.web.client.postForObject
 
-import io.kjson.spring.test.JSONMockServerDSL.Companion.mock
-import io.kjson.spring.test.JSONMockServerDSL.Companion.mockGet
-import io.kjson.spring.test.JSONMockServerDSL.Companion.mockPost
+import io.kjson.spring.test.matchers.UUIDMatcher
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
-class JSONMockServerDSLTest {
+class JSONMockServerTest {
+
+    @Autowired lateinit var jsonSpringTest: JSONSpringTest
 
     @Test fun `should match simple mock request`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
         }.respondJSON {
@@ -71,13 +73,13 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match simple mock request with incorrect method`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.POST)
         }.respondJSON {
@@ -90,19 +92,19 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match simple mock request using mockGet`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockGet(uri = URI("/testendpoint")).respondJSON {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockGet(uri = URI("/testendpoint")).respondJSON {
             ResponseData(date = LocalDate.of(2022, 7, 12), extra = "OK")
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match simple mock request using mockGet with wrong method`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockGet(uri = URI("/testendpoint")).respondJSON {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockGet(uri = URI("/testendpoint")).respondJSON {
             ResponseData(date = LocalDate.of(2022, 7, 12), extra = "OK")
         }
         assertFailsWith<AssertionError> { restTemplate.postForObject<String>("/testendpoint") }.let {
@@ -112,19 +114,19 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match simple mock request using mockPost`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockPost(uri = URI("/testendpoint")).respondJSON {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockPost(uri = URI("/testendpoint")).respondJSON {
             ResponseData(date = LocalDate.of(2022, 7, 12), extra = "OK")
         }
         val response = restTemplate.postForObject<String>("/testendpoint")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match simple mock request using mockPost with wrong method`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockPost(uri = URI("/testendpoint")).respondJSON {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockPost(uri = URI("/testendpoint")).respondJSON {
             ResponseData(date = LocalDate.of(2022, 7, 12), extra = "OK")
         }
         assertFailsWith<AssertionError> { restTemplate.getForObject<String>("/testendpoint") }.let {
@@ -134,8 +136,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match simple mock request using matcher`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             @Suppress("deprecation")
             requestTo(StringStartsWith.startsWith("/testendpoint"))
             method(HttpMethod.GET)
@@ -144,13 +146,13 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint?abc=123")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match simple mock request using incorrect matcher`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             @Suppress("deprecation")
             requestTo(StringStartsWith.startsWith("/testpointend"))
             method(HttpMethod.GET)
@@ -169,8 +171,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match simple mock request using lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo { it.startsWith("/testendpoint") }
             method(HttpMethod.GET)
         }.respondJSON {
@@ -178,13 +180,13 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint?abc=123")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match simple mock request using incorrect lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo { it.startsWith("/testpointend") }
             method(HttpMethod.GET)
         }.respondJSON {
@@ -197,8 +199,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with query param`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             queryParam("param1", "abc")
@@ -207,13 +209,13 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint?param1=abc")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with missing query param`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             queryParam("param1", "abc")
@@ -227,8 +229,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should fail to match mock request with incorrect query param`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             queryParam("param1", "abc")
@@ -242,8 +244,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with query param using lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             queryParam("uuid") { UUIDMatcher.isValidUUID(it) }
@@ -252,13 +254,13 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint?uuid=9ee826a8-13d9-11ed-9752-672495249b25")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with query param using lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             queryParam("uuid") { UUIDMatcher.isValidUUID(it) }
@@ -272,8 +274,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             header("X-Custom-1", "ABC")
@@ -283,13 +285,13 @@ class JSONMockServerDSLTest {
         val requestEntity = RequestEntity.method(HttpMethod.GET, "/testendpoint").header("X-Custom-1", "ABC").build()
         val response = restTemplate.exchange<String>(requestEntity)
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response.body }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with incorrect header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             header("X-Custom-1", "ABC")
@@ -304,8 +306,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with header using lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             header("X-Custom-1") { it.startsWith("A") }
@@ -315,13 +317,13 @@ class JSONMockServerDSLTest {
         val requestEntity = RequestEntity.method(HttpMethod.GET, "/testendpoint").header("X-Custom-1", "ABC").build()
         val response = restTemplate.exchange<String>(requestEntity)
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response.body }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with incorrect header using lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             header("X-Custom-1") { it.startsWith("A") }
@@ -336,8 +338,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with Accept header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             accept(MediaType.APPLICATION_JSON)
@@ -348,13 +350,13 @@ class JSONMockServerDSLTest {
                 RequestEntity.method(HttpMethod.GET, "/testendpoint").accept(MediaType.APPLICATION_JSON).build()
         val response = restTemplate.exchange<String>(requestEntity)
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response.body }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with incorrect Accept header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             acceptApplicationJSON()
@@ -369,8 +371,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with Content-Type header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.POST)
             contentType(MediaType.TEXT_PLAIN)
@@ -385,13 +387,13 @@ class JSONMockServerDSLTest {
         val requestEntity = RequestEntity("DATA!", headers, HttpMethod.POST, URI("/testendpoint"))
         val response = restTemplate.exchange<String>(requestEntity)
         expect("""{"date":"2022-07-21","extra":"OK"}""") { response.body }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with incorrect Content-Type header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.POST)
             contentTypeApplicationJSON()
@@ -411,8 +413,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request using lambda to match content`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.POST)
             contentType(MediaType.TEXT_PLAIN)
@@ -427,13 +429,13 @@ class JSONMockServerDSLTest {
         val requestEntity = RequestEntity("DATA!", headers, HttpMethod.POST, URI("/testendpoint"))
         val response = restTemplate.exchange<String>(requestEntity)
         expect("""{"date":"2022-07-21","extra":"OK"}""") { response.body }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request using lambda to match content`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.POST)
             contentType(MediaType.TEXT_PLAIN)
@@ -453,8 +455,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with JSON content`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockPost {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockPost {
             requestTo("/testendpoint")
             contentType(MediaType.APPLICATION_JSON)
             accept(MediaType.APPLICATION_JSON)
@@ -468,17 +470,17 @@ class JSONMockServerDSLTest {
         val headers = HttpHeaders().apply {
             contentType = MediaType.APPLICATION_JSON
         }
-        val requestData = RequestData(id =  testUUID, name = "Mary")
+        val requestData = RequestData(id = testUUID, name = "Mary")
         val requestEntity = RequestEntity(requestData, headers, HttpMethod.POST, URI("/testendpoint"))
         val response = restTemplate.exchange<String>(requestEntity)
         expect("""{"date":"2022-07-21","extra":"OK"}""") { response.body }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request with incorrect JSON content`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockPost {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockPost {
             requestTo("/testendpoint")
             contentType(MediaType.APPLICATION_JSON)
             accept(MediaType.APPLICATION_JSON)
@@ -492,7 +494,7 @@ class JSONMockServerDSLTest {
         val headers = HttpHeaders().apply {
             contentType = MediaType.APPLICATION_JSON
         }
-        val requestData = RequestData(id =  testUUID, name = "Maria")
+        val requestData = RequestData(id = testUUID, name = "Maria")
         val requestEntity = RequestEntity(requestData, headers, HttpMethod.POST, URI("/testendpoint"))
         assertFailsWith<AssertionError> { restTemplate.exchange<String>(requestEntity) }.let {
             expect("""/name: JSON value doesn't match - expected "Mary", was "Maria"""") { it.message }
@@ -501,8 +503,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match mock request with absent header`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockGet {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockGet {
             requestTo("/testendpoint")
             headerDoesNotExist("X-Test-1")
         }.respondJSON {
@@ -510,13 +512,13 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("""{"date":"2022-07-12","extra":"OK"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should fail to match mock request when unexpected header present`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockGet {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockGet {
             requestTo("/testendpoint")
             headerDoesNotExist("X-Test-1")
         }.respondJSON {
@@ -533,21 +535,21 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match simple mock request and respond using new syntax`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respondJSON(result = ResponseData(date = LocalDate.of(2022, 7, 12), extra = "XXX"))
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("""{"date":"2022-07-12","extra":"XXX"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond using new syntax with JSON lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo { it.startsWith("/testendpoint") }
             method(HttpMethod.GET)
             respondJSON {
@@ -556,104 +558,104 @@ class JSONMockServerDSLTest {
         }
         val response = restTemplate.getForObject<String>("/testendpoint?it=works")
         expect("""{"date":"2022-07-12","extra":"works"}""") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond using new syntax with string`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respond(result = "OK!")
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("OK!") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond using new syntax with string lambda`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo { it.startsWith("/testendpoint") }
             method(HttpMethod.GET)
             respond { "${getParam("why")}" }
         }
         val response = restTemplate.getForObject<String>("/testendpoint?why=not")
         expect("not") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond using new syntax with status only`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respond(HttpStatus.CREATED)
         }
         val response = restTemplate.getForEntity<Unit>("/testendpoint")
         expect(HttpStatus.CREATED) { response.statusCode }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond with fixed text`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respondTextPlain(result = "Good")
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("Good") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond with dynamic text`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo { it.startsWith("/testendpoint") }
             method(HttpMethod.GET)
             respondTextPlain { "${getParam("it")}" }
         }
         val response = restTemplate.getForObject<String>("/testendpoint?it=nice")
         expect("nice") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond with fixed byte array`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respondBytes(result = "Better".toByteArray())
         }
         val response = restTemplate.getForObject<String>("/testendpoint")
         expect("Better") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match simple mock request and respond with dynamic byte array`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respondBytes { "${getParam("it")}".toByteArray() }
         }
         val response = restTemplate.getForObject<String>("/testendpoint?it=very_nice")
         expect("very_nice") { response }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should reject attempt to set response more than once`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mockGet {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mockGet {
             requestTo("/testendpoint")
             respondJSON {
                 ResponseData(date = LocalDate.of(2022, 8, 3), extra = getParam("it").toString())
@@ -667,8 +669,8 @@ class JSONMockServerDSLTest {
 
     @Test fun `should match simple mock request with repetition`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock(ExpectedCount.manyTimes()) {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock(ExpectedCount.manyTimes()) {
             requestTo("/testendpoint")
             method(HttpMethod.GET)
             respondJSON {
@@ -677,19 +679,19 @@ class JSONMockServerDSLTest {
         }
         expect("""{"date":"2022-07-12","extra":"XXX"}""") { restTemplate.getForObject("/testendpoint?a=XXX") }
         expect("""{"date":"2022-07-12","extra":"YYY"}""") { restTemplate.getForObject("/testendpoint?a=YYY") }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     @Test fun `should match multiple requests in sequence`() {
         val restTemplate = RestTemplate()
-        val mockRestServiceServer = MockRestServiceServer.createServer(restTemplate)
-        mockRestServiceServer.mock {
+        val mockServer = jsonSpringTest.createServer(restTemplate)
+        mockServer.mock {
             requestTo("/testendpointA")
             method(HttpMethod.GET)
         }.respondJSON {
             ResponseData(date = LocalDate.of(2022, 7, 12), extra = "AAAA")
         }
-        mockRestServiceServer.mock {
+        mockServer.mock {
             requestTo("/testendpointB")
             method(HttpMethod.GET)
         }.respondJSON {
@@ -697,7 +699,7 @@ class JSONMockServerDSLTest {
         }
         expect("""{"date":"2022-07-12","extra":"AAAA"}""") { restTemplate.getForObject("/testendpointA") }
         expect("""{"date":"2022-07-12","extra":"BBBB"}""") { restTemplate.getForObject("/testendpointB") }
-        mockRestServiceServer.verify()
+        mockServer.verify()
     }
 
     companion object {

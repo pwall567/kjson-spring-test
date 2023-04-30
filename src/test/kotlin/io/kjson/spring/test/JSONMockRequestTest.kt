@@ -25,6 +25,7 @@
 
 package io.kjson.spring.test
 
+import io.kjson.spring.test.data.RequestData
 import kotlin.test.Test
 
 import java.time.LocalDate
@@ -32,25 +33,19 @@ import java.util.UUID
 
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.post
-
-import io.kjson.spring.test.JSONMatcher.Companion.matchesJSON
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
-@AutoConfigureMockMvc
 class JSONMockRequestTest {
 
-    @Autowired lateinit var mockMvc: MockMvc
+    @Autowired lateinit var jsonMockMvc: JSONMockMvc
 
     @Test fun `should use contentJSON`() {
         val id: UUID = UUID.fromString("33e6435c-fd05-11ec-9c79-f751c695d36e")
         val name = "Maggie"
-        mockMvc.post("/testendpoint") {
+        jsonMockMvc.post("/testendpoint") {
             contentJSON(RequestData(id, name))
         }.andExpect {
             status { isOk() }
@@ -66,7 +61,7 @@ class JSONMockRequestTest {
     @Test fun `should use contentJSON lambda`() {
         val id: UUID = UUID.fromString("8d1a1224-fdf9-11ec-8b8c-5b97cd3faaa6")
         val name = "Zebra"
-        mockMvc.post("/testendpoint") {
+        jsonMockMvc.post("/testendpoint") {
             contentJSON {
                 RequestData(id, name)
             }

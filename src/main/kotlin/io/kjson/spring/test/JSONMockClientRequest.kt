@@ -27,20 +27,24 @@ package io.kjson.spring.test
 
 import java.net.URI
 
-import io.kjson.JSON
-import io.kjson.JSONValue
-
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpRequest
 import org.springframework.mock.http.client.MockClientHttpRequest
 
+import io.kjson.JSONConfig
+import io.kjson.JSONValue
+import io.kjson.parser.Parser
+
 /**
- * Wrapper class for [MockClientHttpRequest] which simplifies access to headers and query parameters.
+ * Wrapper class for [MockClientHttpRequest] which simplifies access to headers, query parameters and [JSONConfig].
  *
  * @author  Peter Wall
  */
-class JSONMockClientRequest(private val mockClientHttpRequest: MockClientHttpRequest) : HttpRequest {
+class JSONMockClientRequest(
+    private val mockClientHttpRequest: MockClientHttpRequest,
+    val config: JSONConfig,
+) : HttpRequest {
 
     val uri: URI
         get() = mockClientHttpRequest.uri
@@ -52,7 +56,7 @@ class JSONMockClientRequest(private val mockClientHttpRequest: MockClientHttpReq
         get() = mockClientHttpRequest.bodyAsBytes
 
     val bodyAsJSON: JSONValue? by lazy {
-        JSON.parse(mockClientHttpRequest.bodyAsString)
+        Parser.parse(mockClientHttpRequest.bodyAsString, config.parseOptions)
     }
 
     val paramsMap: Map<String, List<String?>> by lazy {

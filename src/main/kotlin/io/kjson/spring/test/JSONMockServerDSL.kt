@@ -2,7 +2,7 @@
  * @(#) JSONMockServerDSL.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2022, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,34 +37,27 @@ import org.springframework.http.client.ClientHttpRequest
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.mock.http.client.MockClientHttpRequest
 import org.springframework.mock.http.client.MockClientHttpResponse
-import org.springframework.test.web.client.ExpectedCount
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.ResponseActions
 import org.springframework.test.web.client.ResponseCreator
 
+import io.kjson.JSONConfig
 import io.kjson.stringifyJSON
 import io.kjson.test.JSONExpect
 
 /**
- * A DSL class to assist with setting up [MockRestServiceServer] configurations.  Instances of this class are created by
- * the `mock`, `mockGet` or `mockPost` extension functions on [MockRestServiceServer].
+ * DSL class to configure mock requests to a [JSONMockServer] (wrapper class for Spring's `MockRestServiceServer`).
  *
  * @author  Peter Wall
  */
-class JSONMockServerDSL private constructor() : ResponseCreator {
+class JSONMockServerDSL(val config: JSONConfig): ResponseCreator {
 
-    private lateinit var request: MockClientHttpRequest
+    internal lateinit var request: MockClientHttpRequest
 
-    private var response: Response? = null
+    internal var response: Response? = null
         set(newResponse) {
             if (field != null && newResponse != null)
                 throw AssertionError("Response already set")
             field = newResponse
         }
-
-    private fun reset() {
-        response = null
-    }
 
     /**
      * Match the request URI using a string.
@@ -111,11 +104,11 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
      */
     fun queryParam(name: String, vararg expectedValues: String) {
         val queryMap = JSONMockClientRequest.decodeQueryParams(request.uri)
-        val queryEntries = queryMap[name]
-        if (queryEntries == null || queryEntries.isEmpty())
+        val entries = queryMap[name]
+        if (entries.isNullOrEmpty())
             throw AssertionError("Request query param [$name] not found")
         val n = expectedValues.size
-        val s = queryEntries.size
+        val s = entries.size
         if (s != n) {
             when (n) {
                 1 -> fail("Request query param [$name] incorrect; expected single param, was multiple ($s)")
@@ -123,8 +116,8 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
             }
         }
         for (i in 0 until n) {
-            if (expectedValues[i] != queryEntries[i])
-                fail("Request query param [$name] incorrect; expected ${expectedValues[i]}, was ${queryEntries[i]}")
+            if (expectedValues[i] != entries[i])
+                fail("Request query param [$name] incorrect; expected ${expectedValues[i]}, was ${entries[i]}")
         }
     }
 
@@ -133,12 +126,12 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
      */
     fun queryParam(name: String, test: (String) -> Boolean) {
         val queryMap = JSONMockClientRequest.decodeQueryParams(request.uri)
-        val queryEntries = queryMap[name]
-        if (queryEntries == null || queryEntries.isEmpty())
+        val entries = queryMap[name]
+        if (entries.isNullOrEmpty())
             throw AssertionError("Request query param [$name] not found")
-        if (queryEntries.size != 1)
-            fail("Request query param [$name] incorrect; expected single param, was multiple (${queryEntries.size})")
-        val param = queryEntries[0]
+        if (entries.size != 1)
+            fail("Request query param [$name] incorrect; expected single param, was multiple (${entries.size})")
+        val param = entries[0]
         if (param == null || !test(param))
             fail("Request query param [$name] incorrect")
     }
@@ -263,9 +256,10 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         lambda: JSONMockClientRequest.() -> Any?
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, MediaType.APPLICATION_JSON),
-            lambda = { lambda().stringifyJSON(JSONTestConfig.config).toByteArray() },
+            lambda = { lambda().stringifyJSON(config).toByteArray() },
         )
     }
 
@@ -278,9 +272,10 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         result: Any?,
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, MediaType.APPLICATION_JSON),
-            body = result.stringifyJSON(JSONTestConfig.config).toByteArray()
+            body = result.stringifyJSON(config).toByteArray()
         )
     }
 
@@ -294,6 +289,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         result: String? = null,
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, contentType),
             body = result?.toByteArray(),
@@ -311,6 +307,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         lambda: JSONMockClientRequest.() -> String?
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, contentType),
             lambda = { lambda()?.toByteArray() },
@@ -326,6 +323,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         result: String? = null,
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, MediaType.TEXT_PLAIN),
             body = result?.toByteArray(),
@@ -342,6 +340,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         lambda: JSONMockClientRequest.() -> String?
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, MediaType.TEXT_PLAIN),
             lambda = { lambda()?.toByteArray() },
@@ -358,6 +357,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         result: ByteArray? = null,
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, contentType),
             body = result,
@@ -375,6 +375,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         lambda: JSONMockClientRequest.() -> ByteArray?
     ) {
         response = Response(
+            config = config,
             status = status,
             headers = combineHeaders(headers, contentType),
             lambda = lambda,
@@ -394,6 +395,7 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
     }
 
     class Response(
+        val config: JSONConfig,
         val status: HttpStatus,
         val headers: HttpHeaders?,
         private val body: ByteArray? = null,
@@ -406,8 +408,8 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
         }
 
         fun getValue(mockClientHttpRequest: MockClientHttpRequest): ByteArray {
-            body?.let { return it }
-            lambda?.let { return JSONMockClientRequest(mockClientHttpRequest).it() ?: ByteArray(0) }
+            body?.let { return  it }
+            lambda?.let { return JSONMockClientRequest(mockClientHttpRequest, config).it() ?: ByteArray(0) }
             return ByteArray(0)
         }
 
@@ -425,12 +427,6 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
             fail("Request [$name] header media type invalid: $header")
         }
 
-        fun URI.equalIgnoringQuery(other: URI): Boolean = if (isOpaque)
-                other.isOpaque && schemeSpecificPart == other.schemeSpecificPart
-            else
-                !other.isOpaque && scheme == other.scheme && userInfo == other.userInfo && host == other.host &&
-                        port == other.port && path == other.path
-
         fun combineHeaders(headers: HttpHeaders?, contentType: MediaType?): HttpHeaders? = when {
             contentType != null -> HttpHeaders().also { h ->
                 headers?.let { h.addAll(it) }
@@ -439,49 +435,11 @@ class JSONMockServerDSL private constructor() : ResponseCreator {
             else -> headers
         }
 
-        /**
-         * Establish a mock request.
-         */
-        fun MockRestServiceServer.mock(
-            expectedCount: ExpectedCount = ExpectedCount.once(),
-            method: HttpMethod? = null,
-            uri: URI? = null,
-            block: JSONMockServerDSL.() -> Unit = {}
-        ): ResponseActions {
-            val serverDSL = JSONMockServerDSL()
-            val responseActions = expect(expectedCount) { request ->
-                serverDSL.request = request as MockClientHttpRequest
-                serverDSL.apply {
-                    reset() // allow "respond" functions to set the response
-                    method?.let { method(it) }
-                    uri?.let { requestTo(it) }
-                    block()
-                }
-            }
-            responseActions.andRespond(serverDSL)
-            // NOTE: this works only because Spring does not complain when createResponse() returns null (see above)
-            // If that ever changes, we may need to enforce the use of the respondJSON and respond functions in this
-            // class and remove the ability to use a chained andRespond() on the result of mock()
-            return responseActions
-        }
-
-        /**
-         * Establish a mock request with the method preset to GET.
-         */
-        fun MockRestServiceServer.mockGet(
-            expectedCount: ExpectedCount = ExpectedCount.once(),
-            uri: URI? = null,
-            block: JSONMockServerDSL.() -> Unit = {}
-        ) = mock(expectedCount, HttpMethod.GET, uri, block)
-
-        /**
-         * Establish a mock request with the method preset to POST.
-         */
-        fun MockRestServiceServer.mockPost(
-            expectedCount: ExpectedCount = ExpectedCount.once(),
-            uri: URI? = null,
-            block: JSONMockServerDSL.() -> Unit = {}
-        ) = mock(expectedCount, HttpMethod.POST, uri, block)
+        fun URI.equalIgnoringQuery(other: URI): Boolean = if (isOpaque)
+            other.isOpaque && schemeSpecificPart == other.schemeSpecificPart
+        else
+            !other.isOpaque && scheme == other.scheme && userInfo == other.userInfo && host == other.host &&
+                    port == other.port && path == other.path
 
     }
 

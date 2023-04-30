@@ -1,5 +1,5 @@
 /*
- * @(#) RequestData.kt
+ * @(#) MediaTypeMatcherTest.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2022 Peter Wall
@@ -23,11 +23,29 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.matchers
 
-import java.util.UUID
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-data class RequestData(
-    val id: UUID,
-    val name: String,
-)
+import org.springframework.http.MediaType
+
+class MediaTypeMatcherTest {
+
+    @Test fun `should match valid MediaType`() {
+        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
+        assertTrue(mediaTypeMatcher.matches(MediaType.APPLICATION_JSON_VALUE))
+    }
+
+    @Test fun `should reject invalid MediaType`() {
+        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
+        assertFalse(mediaTypeMatcher.matches("COMPLETELY_WRONG"))
+    }
+
+    @Test fun `should reject valid but incorrect MediaType`() {
+        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
+        assertFalse(mediaTypeMatcher.matches(MediaType.TEXT_PLAIN_VALUE))
+    }
+
+}

@@ -1,5 +1,5 @@
 /*
- * @(#) UUIDMatcher.kt
+ * @(#) JSONMatcher.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2022 Peter Wall
@@ -23,28 +23,46 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.matchers
 
 import org.hamcrest.BaseMatcher
 import org.hamcrest.Description
+import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.result.ContentResultMatchersDsl
+import org.springframework.test.web.servlet.MockMvcResultMatchersDsl
 
-import net.pwall.json.validation.JSONValidation
+import io.kjson.test.JSONExpect
 
 /**
- * A `Matcher` that tests whether a string is a valid `UUID`.
+ * A `Matcher` class that allows Spring `mockMvc` JSON responses to be tested using the capabilities of the
+ * [kjson-test](https://github.com/pwall567/kjson-test) library.
  *
  * @author  Peter Wall
  */
-object UUIDMatcher : BaseMatcher<String>() {
+class JSONMatcher private constructor(private val tests: JSONExpect.() -> Unit) : BaseMatcher<String>() {
 
-    override fun describeTo(description: Description) {
-        description.appendText("valid UUID")
+    override fun matches(actual: Any?): Boolean {
+        if (actual !is String)
+            return false
+        JSONExpect.expectJSON(actual, tests)
+        return true
     }
 
-    override fun matches(actual: Any?) = actual is String && isValidUUID(actual)
+    override fun describeTo(description: Description) {
+        description.appendText("valid JSON")
+    }
 
-    fun isValidUUID() = UUIDMatcher
+    companion object {
 
-    fun isValidUUID(string: String): Boolean = JSONValidation.isUUID(string)
+        fun ContentResultMatchersDsl.matchesJSON(tests: JSONExpect.() -> Unit) = string(JSONMatcher(tests))
+
+        fun MockMvcResultMatchersDsl.contentMatchesJSON(tests: JSONExpect.() -> Unit) {
+            content {
+                contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                matchesJSON(tests)
+            }
+        }
+
+    }
 
 }

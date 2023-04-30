@@ -1,5 +1,5 @@
 /*
- * @(#) JSONTestConfig.kt
+ * @(#) RequestData.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2022 Peter Wall
@@ -23,29 +23,11 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.data
 
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
+import java.util.UUID
 
-import io.kjson.JSONConfig
-
-/**
- * A Spring component to supply the [JSONConfig] object to be used by `kjson` functions.
- *
- * @author  Peter Wall
- */
-@Component
-class JSONTestConfig(
-    @Autowired(required = false) config: JSONConfig?,
-) {
-
-    init {
-        Companion.config = config ?: JSONConfig.defaultConfig
-    }
-
-    companion object {
-        lateinit var config: JSONConfig
-    }
-
-}
+data class RequestData(
+    val id: UUID,
+    val name: String,
+)

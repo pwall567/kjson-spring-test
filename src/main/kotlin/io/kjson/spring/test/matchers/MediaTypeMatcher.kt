@@ -1,5 +1,5 @@
 /*
- * @(#) MediaTypeMatcherTest.kt
+ * @(#) MediaTypeMatcher.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2022 Peter Wall
@@ -23,28 +23,32 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test
+package io.kjson.spring.test.matchers
 
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.hamcrest.BaseMatcher
+import org.hamcrest.Description
 import org.springframework.http.MediaType
 
-class MediaTypeMatcherTest {
+/**
+ * A `Matcher` that matches a [MediaType], comparing only the type and subtype fields.
+ *
+ * @author  Peter Wall
+ */
+class MediaTypeMatcher(private val mediaType: MediaType) : BaseMatcher<String>() {
 
-    @Test fun `should match valid MediaType`() {
-        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
-        assertTrue(mediaTypeMatcher.matches(MediaType.APPLICATION_JSON_VALUE))
+    override fun describeTo(description: Description) {
+        description.appendText("valid Media Type")
     }
 
-    @Test fun `should reject invalid MediaType`() {
-        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
-        assertFalse(mediaTypeMatcher.matches("COMPLETELY_WRONG"))
-    }
-
-    @Test fun `should reject valid but incorrect MediaType`() {
-        val mediaTypeMatcher = MediaTypeMatcher(MediaType.APPLICATION_JSON)
-        assertFalse(mediaTypeMatcher.matches(MediaType.TEXT_PLAIN_VALUE))
+    override fun matches(actual: Any?): Boolean {
+        if (actual !is String)
+            return false
+        val actualMediaType: MediaType = try {
+            MediaType.parseMediaType(actual)
+        } catch (_: Exception) {
+            return false
+        }
+        return actualMediaType.equalsTypeAndSubtype(mediaType)
     }
 
 }
