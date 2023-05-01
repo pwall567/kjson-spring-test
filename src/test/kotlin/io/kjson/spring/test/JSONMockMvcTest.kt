@@ -55,6 +55,18 @@ class JSONMockMvcTest {
         }
     }
 
+    @Test fun `should perform variable substitution`() {
+        jsonMockMvc.getForJSON("/testendpoint3/{extra}", "what").andExpect {
+            status { isOk() }
+            content {
+                matchesJSON {
+                    property("date", LocalDate.of(2023, 5, 1))
+                    property("extra", "what")
+                }
+            }
+        }
+    }
+
     @Test fun `should use getForJSON`() {
         jsonMockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }

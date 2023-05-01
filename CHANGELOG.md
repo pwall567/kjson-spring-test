@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 The major and minor version numbers of this repository (but not patch numbers) match the version numbers of the
 [`kjson`](https://github.com/pwall567/kjson) library used by this Spring library.
 
+## [4.4.2] - 2023-05-01
+### Changed
+- `JSONMockMvc`: fixed bug in URI variable substitution
+
 ## [4.4.1] - 2023-05-01
 ### Changed
 - `JSONMockMvcResultMatchersDSL`: added `header` (missed in major update)

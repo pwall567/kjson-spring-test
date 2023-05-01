@@ -78,7 +78,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.get(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.get(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply(dsl).perform(mockMvc)
     }
 
@@ -103,7 +103,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.get(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.get(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply {
             accept(MediaType.APPLICATION_JSON)
         }.apply(dsl).perform(mockMvc)
@@ -132,7 +132,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.post(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.post(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply(dsl).perform(mockMvc)
     }
 
@@ -157,7 +157,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.post(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.post(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply {
             accept(MediaType.APPLICATION_JSON)
         }.apply(dsl).perform(mockMvc)
@@ -186,7 +186,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.put(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.put(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply(dsl).perform(mockMvc)
     }
 
@@ -211,7 +211,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.put(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.put(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply {
             accept(MediaType.APPLICATION_JSON)
         }.apply(dsl).perform(mockMvc)
@@ -240,7 +240,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.patch(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.patch(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply(dsl).perform(mockMvc)
     }
 
@@ -265,7 +265,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.patch(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.patch(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply {
             accept(MediaType.APPLICATION_JSON)
         }.apply(dsl).perform(mockMvc)
@@ -294,7 +294,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.delete(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.delete(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply(dsl).perform(mockMvc)
     }
 
@@ -319,7 +319,7 @@ class JSONMockMvc(
         vararg uriVars: Any?,
         dsl: JSONMockHttpServletRequestDSL.() -> Unit = {}
     ): JSONResultActionsDSL {
-        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.delete(urlTemplate, uriVars)
+        val requestBuilder: MockHttpServletRequestBuilder = MockMvcRequestBuilders.delete(urlTemplate, *uriVars)
         return JSONMockHttpServletRequestDSL(requestBuilder, config).apply {
             accept(MediaType.APPLICATION_JSON)
         }.apply(dsl).perform(mockMvc)
