@@ -2,7 +2,7 @@
  * @(#) TestController.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
- * Copyright (c) 2022 Peter Wall
+ * Copyright (c) 2022, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,15 @@
 package io.kjson.spring.test
 
 import java.time.LocalDate
+import java.util.UUID
 
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -74,6 +79,14 @@ class TestController {
         @RequestHeader headers: MultiValueMap<String, String>
     ): MultiValueMap<String, String> {
         return headers
+    }
+
+    @PostMapping("/returnheader")
+    fun returnHeader(
+        @RequestBody requestData: RequestData,
+    ): ResponseEntity<Map<String, UUID>> {
+        val headers = HttpHeaders().apply { add(requestData.name, requestData.id.toString()) }
+        return ResponseEntity(mapOf(requestData.name to requestData.id), headers, HttpStatus.OK)
     }
 
 }

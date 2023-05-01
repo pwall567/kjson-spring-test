@@ -1,5 +1,5 @@
 /*
- * @(#) JSONMockMvcResultMatchersDSL.kt
+ * @(#) JSONHeaderResultMatchersDSL.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2023 Peter Wall
@@ -25,35 +25,35 @@
 
 package io.kjson.spring.test.matchers
 
-import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.hamcrest.Matcher
+import org.hamcrest.MatcherAssert.assertThat
+import org.springframework.test.util.AssertionErrors.assertEquals
+import org.springframework.test.util.AssertionErrors.assertFalse
+import org.springframework.test.util.AssertionErrors.assertTrue
 
 import io.kjson.spring.test.JSONMockMvc
-import io.kjson.test.JSONExpect
 
 /**
- * DSL class to provide result matching functions for `MockMvc`.
+ * DSL class to provide `header` matching functions for `MockMvc`.
  *
  * @author  Peter Wall
  */
-class JSONMockMvcResultMatchersDSL(val resultActions: JSONMockMvc.JSONResultActions) {
+class JSONHeaderResultMatchersDSL(private val resultActions: JSONMockMvc.JSONResultActions) {
 
-    fun status(dsl: JSONStatusResultMatchersDSL.() -> Unit) {
-        JSONStatusResultMatchersDSL(resultActions.mvcResult.response).dsl()
+    fun string(name: String, value: String) {
+        assertEquals("Response header '$name'", value, resultActions.mvcResult.response.getHeader(name))
     }
 
-    fun content(dsl: JSONContentResultMatchersDSL.() -> Unit) {
-        JSONContentResultMatchersDSL(resultActions).dsl()
+    fun string(name: String, matcher: Matcher<String>) {
+        assertThat("Response header '$name'", resultActions.mvcResult.response.getHeader(name), matcher)
     }
 
-    fun contentMatchesJSON(tests: JSONExpect.() -> Unit) {
-        MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON).
-                match(resultActions.mvcResult)
-        JSONExpect.expectJSON(resultActions.mvcResult.response.contentAsString, tests)
+    fun exists(name: String) {
+        assertTrue("Response should contain header '$name'", resultActions.mvcResult.response.containsHeader(name))
     }
 
-    fun header(dsl: JSONHeaderResultMatchersDSL.() -> Unit) {
-        JSONHeaderResultMatchersDSL(resultActions).dsl()
+    fun doesNotExist(name: String) {
+        assertFalse("Response should not contain header '$name'", resultActions.mvcResult.response.containsHeader(name))
     }
 
 }

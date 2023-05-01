@@ -5,7 +5,7 @@
 [![Kotlin](https://img.shields.io/static/v1?label=Kotlin&message=v1.7.21&color=7f52ff&logo=kotlin&logoColor=7f52ff)](https://github.com/JetBrains/kotlin/releases/tag/v1.7.21)
 [![Maven Central](https://img.shields.io/maven-central/v/io.kjson/kjson-spring-test?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.kjson%22%20AND%20a:%22kjson-spring-test%22)
 
-Spring JSON testing functions for `kjson`
+Spring JSON testing functions for [`kjson`](https://github.com/pwall567/kjson).
 
 ## **IMPORTANT**
 
@@ -312,7 +312,7 @@ be shared by both libraries.
 
 ## Dependency Specification
 
-The latest version of the library is 4.4 (the version number of this library matches the version of `kjson` with which
+The latest version of the library is 4.4.1 (the version number of this library matches the version of `kjson` with which
 it was built), and it may be obtained from the Maven Central repository.
 (The following dependency declarations assume that the library will be included for test purposes; this is
 expected to be its principal use.)
@@ -324,19 +324,19 @@ This version was built using version 5.3.27 of Spring, and version 2.7.11 of Spr
     <dependency>
       <groupId>io.kjson</groupId>
       <artifactId>kjson-spring</artifactId>
-      <version>4.4</version>
+      <version>4.4.1</version>
       <scope>test</scope>
     </dependency>
 ```
 ### Gradle
 ```groovy
-    testImplementation 'io.kjson:kjson-spring:4.4'
+    testImplementation 'io.kjson:kjson-spring:4.4.1'
 ```
 ### Gradle (kts)
 ```kotlin
-    testImplementation("io.kjson:kjson-spring:4.4")
+    testImplementation("io.kjson:kjson-spring:4.4.1")
 ```
 
 Peter Wall
 
-2023-04-30
+2023-05-01
