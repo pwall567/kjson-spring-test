@@ -28,20 +28,13 @@ package io.kjson.spring.test
 import java.net.URI
 import java.time.Duration
 
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.mock.http.client.MockClientHttpRequest
 import org.springframework.test.web.client.ExpectedCount
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.RequestMatcher
-import org.springframework.test.web.client.ResponseActions
-import org.springframework.test.web.client.ResponseCreator
-import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 
 import io.kjson.JSONConfig
-import io.kjson.stringifyJSON
 
 /**
  * `JSONMockServer` is a wrapper class for Spring's [MockRestServiceServer], providing access to the [JSONConfig]
@@ -49,26 +42,27 @@ import io.kjson.stringifyJSON
  *
  * @author  Peter Wall
  */
-class JSONMockServer(val mrss: MockRestServiceServer, val config: JSONConfig) {
+@Suppress("unused", "MemberVisibilityCanBePrivate")
+class JSONMockServer(val mockRestServiceServer: MockRestServiceServer, val config: JSONConfig) {
 
     fun expect(requestMatcher: RequestMatcher): JSONResponseActions {
-        return JSONResponseActions(mrss.expect(requestMatcher), config)
+        return JSONResponseActions(mockRestServiceServer.expect(requestMatcher), config)
     }
 
     fun expect(expectedCount: ExpectedCount, requestMatcher: RequestMatcher): JSONResponseActions {
-        return JSONResponseActions(mrss.expect(expectedCount, requestMatcher), config)
+        return JSONResponseActions(mockRestServiceServer.expect(expectedCount, requestMatcher), config)
     }
 
     fun verify() {
-        mrss.verify()
+        mockRestServiceServer.verify()
     }
 
     fun verify(timeout: Duration) {
-        mrss.verify(timeout)
+        mockRestServiceServer.verify(timeout)
     }
 
     fun reset() {
-        mrss.reset()
+        mockRestServiceServer.reset()
     }
 
     fun mock(
@@ -78,7 +72,7 @@ class JSONMockServer(val mrss: MockRestServiceServer, val config: JSONConfig) {
         block: JSONMockServerDSL.() -> Unit = {}
     ): JSONResponseActions {
         val serverDSL = JSONMockServerDSL(config)
-        val responseActions = mrss.expect(expectedCount) { request ->
+        val responseActions = mockRestServiceServer.expect(expectedCount) { request ->
             serverDSL.apply {
                 this.request = request as MockClientHttpRequest
                 response = null
@@ -130,30 +124,5 @@ class JSONMockServer(val mrss: MockRestServiceServer, val config: JSONConfig) {
         uri: URI? = null,
         block: JSONMockServerDSL.() -> Unit = {}
     ) = mock(expectedCount, HttpMethod.DELETE, uri, block)
-
-    class JSONResponseActions(
-        val responseActions: ResponseActions,
-        val config: JSONConfig,
-    ) : ResponseActions {
-
-        override fun andExpect(requestMatcher: RequestMatcher): JSONResponseActions {
-            responseActions.andExpect(requestMatcher)
-            return this
-        }
-
-        override fun andRespond(responseCreator: ResponseCreator) {
-            responseActions.andRespond(responseCreator)
-        }
-
-        fun respondJSON(
-            status: HttpStatus = HttpStatus.OK,
-            headers: HttpHeaders = HttpHeaders(),
-            block: () -> Any?
-        ) {
-            val body = block().stringifyJSON(config)
-            andRespond(withStatus(status).headers(headers).contentType(MediaType.APPLICATION_JSON).body(body))
-        }
-
-    }
 
 }

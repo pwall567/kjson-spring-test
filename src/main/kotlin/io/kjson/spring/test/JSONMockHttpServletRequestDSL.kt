@@ -47,6 +47,7 @@ import io.kjson.stringifyJSON
  *
  * @author  Peter Wall
  */
+@Suppress("unused", "MemberVisibilityCanBePrivate")
 class JSONMockHttpServletRequestDSL(
     private val builder: MockHttpServletRequestBuilder,
     private val config: JSONConfig,
@@ -110,7 +111,7 @@ class JSONMockHttpServletRequestDSL(
         builder.merge(parent)
     }
 
-    fun perform(mockMvc: MockMvc): JSONMockMvc.JSONResultActionsDSL {
+    fun perform(mockMvc: MockMvc): JSONResultActionsDSL {
         contextPath?.let { builder.contextPath(it) }
         servletPath?.let { builder.servletPath(it) }
         pathInfo?.let { builder.pathInfo(it) }
@@ -119,7 +120,10 @@ class JSONMockHttpServletRequestDSL(
         content?.let { builder.content(when (it) {
             is ByteArray -> it
             is String -> it.toByteArray()
-            else -> it.stringifyJSON(config).toByteArray().also { contentType = MediaType.APPLICATION_JSON }
+            else -> it.stringifyJSON(config).toByteArray().also {
+                if (contentType == null)
+                    contentType = MediaType.APPLICATION_JSON
+            }
         }) }
         accept?.let { builder.accept(it) }
         contentType?.let { builder.contentType(it) }
@@ -128,7 +132,7 @@ class JSONMockHttpServletRequestDSL(
         flashAttrs?.let { builder.flashAttrs(it) }
         session?.let { builder.session(it) }
         principal?.let { builder.principal(it) }
-        return JSONMockMvc.JSONResultActionsDSL(mockMvc.perform(builder))
+        return JSONResultActionsDSL(mockMvc.perform(builder))
     }
 
     fun contentJSON(block: () -> Any?) {

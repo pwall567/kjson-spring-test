@@ -25,26 +25,32 @@
 
 package io.kjson.spring.test
 
-import io.kjson.spring.test.data.RequestData
 import kotlin.test.Test
-import java.net.URI
 
+import java.net.URI
 import java.time.LocalDate
 import java.util.UUID
 
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
+
+import io.kjson.spring.test.data.RequestData
+import io.kjson.spring.test.matchers.JSONMatcher.Companion.matchesJSON
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
+@AutoConfigureMockMvc
 class JSONMockMvcTest {
 
-    @Autowired lateinit var jsonMockMvc: JSONMockMvc
+    @Autowired lateinit var mockMvc: MockMvc
 
     @Test fun `should use JSONMockMvc`() {
-        jsonMockMvc.get("/testendpoint").andExpect {
+        mockMvc.get("/testendpoint").andExpect {
             status { isOk() }
             content {
                 matchesJSON {
@@ -56,7 +62,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should perform variable substitution`() {
-        jsonMockMvc.getForJSON("/testendpoint3/{extra}", "what").andExpect {
+        mockMvc.getForJSON("/testendpoint3/{extra}", "what").andExpect {
             status { isOk() }
             content {
                 matchesJSON {
@@ -68,7 +74,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use getForJSON`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             contentMatchesJSON {
                 property("date", LocalDate.of(2022, 7, 6))
@@ -78,7 +84,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use getForJSON using URI`() {
-        jsonMockMvc.getForJSON(URI("/testendpoint")).andExpect {
+        mockMvc.getForJSON(URI("/testendpoint")).andExpect {
             status { isOk() }
             contentMatchesJSON {
                 property("date", LocalDate.of(2022, 7, 6))
@@ -88,7 +94,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use getJSON with headers`() {
-        jsonMockMvc.getForJSON("/testheaders") {
+        mockMvc.getForJSON("/testheaders") {
             header("testheader1", "value1")
         }.andExpect {
             status { isOk() }
@@ -102,7 +108,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use postJSON`() {
-        jsonMockMvc.postForJSON("/testendpoint") {
+        mockMvc.postForJSON("/testendpoint") {
             contentJSON {
                 RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
             }
@@ -116,7 +122,7 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use postJSON using URI`() {
-        jsonMockMvc.postForJSON(URI("/testendpoint")) {
+        mockMvc.postForJSON(URI("/testendpoint")) {
             contentJSON {
                 RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
             }
@@ -130,13 +136,25 @@ class JSONMockMvcTest {
     }
 
     @Test fun `should use postJSON with automatic JSON conversion`() {
-        jsonMockMvc.postForJSON("/testendpoint") {
+        mockMvc.postForJSON("/testendpoint") {
             content = RequestData(id = UUID.fromString("50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6"), name = "Mary")
         }.andExpect {
             status { isOk() }
             contentMatchesJSON {
                 property("date", LocalDate.of(2022, 7, 6))
                 property("extra", "50b4f2c8-fdf8-11ec-be56-3fb4fd705ec6|Mary")
+            }
+        }
+    }
+
+    @Test fun `should use discovered JSONConfig`() {
+        mockMvc.getForJSON("/testendpoint4/abcde").andExpect {
+            status { isOk() }
+            content {
+                matchesJSON {
+                    property("aa", "abcde")
+                    property("bb", "edcba")
+                }
             }
         }
     }

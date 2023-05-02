@@ -1,5 +1,5 @@
 /*
- * @(#) JSONHeaderResultMatchersDSL.kt
+ * @(#) JSONResultActions.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2023 Peter Wall
@@ -23,37 +23,30 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test.matchers
+package io.kjson.spring.test
 
-import org.hamcrest.Matcher
-import org.hamcrest.MatcherAssert.assertThat
-import org.springframework.test.util.AssertionErrors.assertEquals
-import org.springframework.test.util.AssertionErrors.assertFalse
-import org.springframework.test.util.AssertionErrors.assertTrue
-
-import io.kjson.spring.test.JSONResultActions
+import org.springframework.test.web.servlet.MvcResult
+import org.springframework.test.web.servlet.ResultActions
+import org.springframework.test.web.servlet.ResultHandler
+import org.springframework.test.web.servlet.ResultMatcher
 
 /**
- * DSL class to provide `header` matching functions for `MockMvc`.
+ * Replacement for Spring [ResultActions] (required because many of the Spring classes have non-public constructors).
  *
  * @author  Peter Wall
  */
-class JSONHeaderResultMatchersDSL(private val resultActions: JSONResultActions) {
+class JSONResultActions(val mvcResult: MvcResult) : ResultActions {
 
-    fun string(name: String, value: String) {
-        assertEquals("Response header '$name'", value, resultActions.mvcResult.response.getHeader(name))
+    override fun andExpect(matcher: ResultMatcher): JSONResultActions {
+        matcher.match(mvcResult)
+        return this
     }
 
-    fun string(name: String, matcher: Matcher<String>) {
-        assertThat("Response header '$name'", resultActions.mvcResult.response.getHeader(name), matcher)
+    override fun andDo(handler: ResultHandler): JSONResultActions {
+        handler.handle(mvcResult)
+        return this
     }
 
-    fun exists(name: String) {
-        assertTrue("Response should contain header '$name'", resultActions.mvcResult.response.containsHeader(name))
-    }
-
-    fun doesNotExist(name: String) {
-        assertFalse("Response should not contain header '$name'", resultActions.mvcResult.response.containsHeader(name))
-    }
+    override fun andReturn(): MvcResult = mvcResult
 
 }

@@ -1,5 +1,5 @@
 /*
- * @(#) JSONMockMvcResultMatchersDSL.kt
+ * @(#) TestJSONConfig.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2023 Peter Wall
@@ -23,38 +23,29 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test.matchers
+package io.kjson.spring.test
 
-import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
-import io.kjson.spring.test.JSONResultActions
-import io.kjson.test.JSONExpect
+import io.kjson.JSONConfig
+import io.kjson.JSONObject
+import io.kjson.spring.test.data.OtherData
 
-/**
- * DSL class to provide result matching functions for `MockMvc`.
- *
- * @author  Peter Wall
- */
-@Suppress("MemberVisibilityCanBePrivate")
-class JSONMockMvcResultMatchersDSL(val resultActions: JSONResultActions) {
+@Configuration
+@Suppress("unused")
+open class TestJSONConfig {
 
-    fun status(dsl: JSONStatusResultMatchersDSL.() -> Unit) {
-        JSONStatusResultMatchersDSL(resultActions.mvcResult.response).dsl()
-    }
-
-    fun content(dsl: JSONContentResultMatchersDSL.() -> Unit) {
-        JSONContentResultMatchersDSL(resultActions).dsl()
-    }
-
-    fun contentMatchesJSON(tests: JSONExpect.() -> Unit) {
-        MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON).
-                match(resultActions.mvcResult)
-        JSONExpect.expectJSON(resultActions.mvcResult.response.contentAsString, tests)
-    }
-
-    fun header(dsl: JSONHeaderResultMatchersDSL.() -> Unit) {
-        JSONHeaderResultMatchersDSL(resultActions).dsl()
+    @Bean open fun config(): JSONConfig = JSONConfig {
+        readBufferSize = 128
+        toJSON<OtherData> { other ->
+            other?.let {
+                JSONObject.build {
+                    add("aa", other.a)
+                    add("bb", other.b.reversed())
+                }
+            }
+        }
     }
 
 }

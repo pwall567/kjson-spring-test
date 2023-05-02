@@ -31,7 +31,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.util.AssertionErrors.assertEquals
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
-import io.kjson.spring.test.JSONMockMvc
+import io.kjson.spring.test.JSONResultActions
 import io.kjson.test.JSONExpect
 
 /**
@@ -39,7 +39,8 @@ import io.kjson.test.JSONExpect
  *
  * @author  Peter Wall
  */
-class JSONContentResultMatchersDSL(private val resultActions: JSONMockMvc.JSONResultActions) {
+@Suppress("MemberVisibilityCanBePrivate")
+class JSONContentResultMatchersDSL(val resultActions: JSONResultActions) {
 
     private val matchers = MockMvcResultMatchers.content()
 

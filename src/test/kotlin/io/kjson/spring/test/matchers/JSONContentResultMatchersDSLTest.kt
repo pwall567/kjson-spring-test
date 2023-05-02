@@ -33,24 +33,29 @@ import java.time.LocalDate
 
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 
 import io.kjson.spring.JSONSpring
-import io.kjson.spring.test.JSONMockMvc
 import io.kjson.spring.test.TestConfiguration
+import io.kjson.spring.test.getForJSON
+import io.kjson.spring.test.matchers.JSONMatcher.Companion.matchesJSON
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
 @ComponentScan(basePackageClasses = [JSONSpring::class])
+@AutoConfigureMockMvc
 class JSONContentResultMatchersDSLTest {
 
-    @Autowired lateinit var jsonMockMvc: JSONMockMvc
+    @Autowired lateinit var mockMvc: MockMvc
 
     @Test fun `should test content type`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 contentType("application/json;charset=UTF-8")
@@ -60,7 +65,7 @@ class JSONContentResultMatchersDSLTest {
 
     @Test fun `should throw error on incorrect content type`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.getForJSON("/testendpoint").andExpect {
+            mockMvc.getForJSON("/testendpoint").andExpect {
                 status { isOk() }
                 content {
                     contentType("text/plain")
@@ -72,7 +77,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test content type using MediaType`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 contentType(MediaType("application", "json", mapOf("charset" to "UTF-8")))
@@ -81,7 +86,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test content type compatible with`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 contentTypeCompatibleWith("application/json")
@@ -91,7 +96,7 @@ class JSONContentResultMatchersDSLTest {
 
     @Test fun `should throw error on incorrect content type compatible with`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.getForJSON("/testendpoint").andExpect {
+            mockMvc.getForJSON("/testendpoint").andExpect {
                 status { isOk() }
                 content {
                     contentTypeCompatibleWith("image/jpeg")
@@ -103,7 +108,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test content type compatible with using MediaType`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
@@ -112,7 +117,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test encoding`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 encoding("UTF-8")
@@ -121,7 +126,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test content as string`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 string(right)
@@ -131,7 +136,7 @@ class JSONContentResultMatchersDSLTest {
 
     @Test fun `should throw error on incorrect content as string`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.getForJSON("/testendpoint").andExpect {
+            mockMvc.getForJSON("/testendpoint").andExpect {
                 status { isOk() }
                 content {
                     string(wrong)
@@ -145,7 +150,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test content as byte array`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             content {
                 bytes(right.toByteArray())
@@ -154,7 +159,7 @@ class JSONContentResultMatchersDSLTest {
     }
 
     @Test fun `should test content using matchesJSON`() {
-        jsonMockMvc.get("/testendpoint").andExpect {
+        mockMvc.get("/testendpoint").andExpect {
             status { isOk() }
             content {
                 matchesJSON {
@@ -167,7 +172,7 @@ class JSONContentResultMatchersDSLTest {
 
     @Test fun `should throw error on incorrect content using matchesJSON`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.get("/testendpoint").andExpect {
+            mockMvc.get("/testendpoint").andExpect {
                 status { isOk() }
                 content {
                     matchesJSON {

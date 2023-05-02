@@ -5,7 +5,7 @@
 
   <groupId>io.kjson</groupId>
   <artifactId>kjson-spring-test</artifactId>
-  <version>4.4.2</version>
+  <version>4.4.3</version>
   <name>Spring JSON testing functions for kjson</name>
   <description>Classes to assist with testing kjson Spring applications.</description>
   <packaging>jar</packaging>

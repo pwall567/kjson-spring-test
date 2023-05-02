@@ -34,6 +34,7 @@ import org.springframework.test.util.AssertionErrors.fail
  *
  * @author  Peter Wall
  */
+@Suppress("unused", "MemberVisibilityCanBePrivate", "deprecation", "RedundantSuppression")
 class JSONStatusResultMatchersDSL(private val response: MockHttpServletResponse) {
 
     fun is1xxInformational() {
@@ -147,7 +148,6 @@ class JSONStatusResultMatchersDSL(private val response: MockHttpServletResponse)
     }
 
     fun isMovedTemporarily() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.MOVED_TEMPORARILY)
     }
 
@@ -160,7 +160,6 @@ class JSONStatusResultMatchersDSL(private val response: MockHttpServletResponse)
     }
 
     fun isUseProxy() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.USE_PROXY)
     }
 
@@ -229,7 +228,6 @@ class JSONStatusResultMatchersDSL(private val response: MockHttpServletResponse)
     }
 
     fun isRequestEntityTooLarge() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.REQUEST_ENTITY_TOO_LARGE)
     }
 
@@ -238,7 +236,6 @@ class JSONStatusResultMatchersDSL(private val response: MockHttpServletResponse)
     }
 
     fun isRequestUriTooLong() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.REQUEST_URI_TOO_LONG)
     }
 
@@ -259,17 +256,14 @@ class JSONStatusResultMatchersDSL(private val response: MockHttpServletResponse)
     }
 
     fun isInsufficientSpaceOnResource() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.INSUFFICIENT_SPACE_ON_RESOURCE)
     }
 
     fun isMethodFailure() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.METHOD_FAILURE)
     }
 
     fun isDestinationLocked() {
-        @Suppress("deprecation")
         isEqualTo(HttpStatus.DESTINATION_LOCKED)
     }
 

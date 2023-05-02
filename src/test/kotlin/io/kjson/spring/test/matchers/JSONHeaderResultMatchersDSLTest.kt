@@ -33,25 +33,27 @@ import java.util.UUID
 
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.servlet.MockMvc
 
 import io.kjson.spring.JSONSpring
-import io.kjson.spring.test.JSONMockMvc
 import io.kjson.spring.test.TestConfiguration
 import io.kjson.spring.test.data.RequestData
+import io.kjson.spring.test.postForJSON
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
 @ComponentScan(basePackageClasses = [JSONSpring::class])
+@AutoConfigureMockMvc
 class JSONHeaderResultMatchersDSLTest {
 
-    @Autowired
-    lateinit var jsonMockMvc: JSONMockMvc
+    @Autowired lateinit var mockMvc: MockMvc
 
     @Test fun `should test returned header`() {
-        jsonMockMvc.postForJSON("/returnheader") {
+        mockMvc.postForJSON("/returnheader") {
             content = RequestData(uuid, headerName)
         }.andExpect {
             status { isOk() }
@@ -63,7 +65,7 @@ class JSONHeaderResultMatchersDSLTest {
 
     @Test fun `should throw error on incorrect returned header`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.postForJSON("/returnheader") {
+            mockMvc.postForJSON("/returnheader") {
                 content = RequestData(uuid, headerName)
             }.andExpect {
                 status { isOk() }
@@ -77,7 +79,7 @@ class JSONHeaderResultMatchersDSLTest {
     }
 
     @Test fun `should test returned header exists`() {
-        jsonMockMvc.postForJSON("/returnheader") {
+        mockMvc.postForJSON("/returnheader") {
             content = RequestData(uuid, headerName)
         }.andExpect {
             status { isOk() }
@@ -89,7 +91,7 @@ class JSONHeaderResultMatchersDSLTest {
 
     @Test fun `should throw error when returned header does not exist`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.postForJSON("/returnheader") {
+            mockMvc.postForJSON("/returnheader") {
                 content = RequestData(uuid, headerName)
             }.andExpect {
                 status { isOk() }
@@ -103,7 +105,7 @@ class JSONHeaderResultMatchersDSLTest {
     }
 
     @Test fun `should test returned header does not exist`() {
-        jsonMockMvc.postForJSON("/returnheader") {
+        mockMvc.postForJSON("/returnheader") {
             content = RequestData(uuid, headerName)
         }.andExpect {
             status { isOk() }
@@ -115,7 +117,7 @@ class JSONHeaderResultMatchersDSLTest {
 
     @Test fun `should throw error when unexpected header does exist`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.postForJSON("/returnheader") {
+            mockMvc.postForJSON("/returnheader") {
                 content = RequestData(uuid, headerName)
             }.andExpect {
                 status { isOk() }

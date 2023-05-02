@@ -33,23 +33,26 @@ import java.time.LocalDate
 
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.servlet.MockMvc
 
 import io.kjson.spring.JSONSpring
-import io.kjson.spring.test.JSONMockMvc
 import io.kjson.spring.test.TestConfiguration
+import io.kjson.spring.test.getForJSON
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TestConfiguration::class])
 @ComponentScan(basePackageClasses = [JSONSpring::class])
+@AutoConfigureMockMvc
 class JSONMatcherTest {
 
-    @Autowired lateinit var jsonMockMvc: JSONMockMvc
+    @Autowired lateinit var mockMvc: MockMvc
 
     @Test fun `should validate JSON output`() {
-        jsonMockMvc.getForJSON("/testendpoint").andExpect {
+        mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }
             contentMatchesJSON {
                 property("date", LocalDate.of(2022, 7, 6))
@@ -60,7 +63,7 @@ class JSONMatcherTest {
 
     @Test fun `should fail on incorrect JSON output`() {
         assertFailsWith<AssertionError> {
-            jsonMockMvc.getForJSON("/testendpoint").andExpect {
+            mockMvc.getForJSON("/testendpoint").andExpect {
                 status { isOk() }
                 content {
                     matchesJSON {

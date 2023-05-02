@@ -25,6 +25,7 @@
 
 package io.kjson.spring.test
 
+import io.kjson.spring.test.data.OtherData
 import java.time.LocalDate
 import java.util.UUID
 
@@ -70,6 +71,16 @@ class TestController {
         return ResponseData(
             date = LocalDate.of(2023, 5, 1),
             extra = extra,
+        )
+    }
+
+    @GetMapping("/testendpoint4/{extra}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getOtherDara(
+        @PathVariable extra: String,
+    ): OtherData {
+        return OtherData(
+            a = extra,
+            b = extra,
         )
     }
 

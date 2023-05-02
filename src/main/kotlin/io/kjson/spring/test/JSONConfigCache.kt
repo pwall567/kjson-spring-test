@@ -1,5 +1,5 @@
 /*
- * @(#) JSONHeaderResultMatchersDSL.kt
+ * @(#) JSONConfigCache.kt
  *
  * kjson-spring-test  Spring JSON testing functions for kjson
  * Copyright (c) 2023 Peter Wall
@@ -23,37 +23,27 @@
  * SOFTWARE.
  */
 
-package io.kjson.spring.test.matchers
+package io.kjson.spring.test
 
-import org.hamcrest.Matcher
-import org.hamcrest.MatcherAssert.assertThat
-import org.springframework.test.util.AssertionErrors.assertEquals
-import org.springframework.test.util.AssertionErrors.assertFalse
-import org.springframework.test.util.AssertionErrors.assertTrue
+import org.springframework.beans.BeansException
+import org.springframework.beans.factory.getBean
+import org.springframework.context.ApplicationContext
 
-import io.kjson.spring.test.JSONResultActions
+import io.kjson.JSONConfig
 
 /**
- * DSL class to provide `header` matching functions for `MockMvc`.
+ * Cached copy of auto-discovered [JSONConfig], obtained from [ApplicationContext].
  *
  * @author  Peter Wall
  */
-class JSONHeaderResultMatchersDSL(private val resultActions: JSONResultActions) {
+object JSONConfigCache {
 
-    fun string(name: String, value: String) {
-        assertEquals("Response header '$name'", value, resultActions.mvcResult.response.getHeader(name))
-    }
+    private var config: JSONConfig? = null
 
-    fun string(name: String, matcher: Matcher<String>) {
-        assertThat("Response header '$name'", resultActions.mvcResult.response.getHeader(name), matcher)
-    }
-
-    fun exists(name: String) {
-        assertTrue("Response should contain header '$name'", resultActions.mvcResult.response.containsHeader(name))
-    }
-
-    fun doesNotExist(name: String) {
-        assertFalse("Response should not contain header '$name'", resultActions.mvcResult.response.containsHeader(name))
-    }
+    fun getConfig(applicationContext: ApplicationContext?): JSONConfig = config ?: try {
+        applicationContext?.getBean<JSONConfig>() ?: JSONConfig.defaultConfig
+    } catch (be: BeansException) {
+        JSONConfig.defaultConfig
+    }.also { config = it }
 
 }

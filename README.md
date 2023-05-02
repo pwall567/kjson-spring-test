@@ -14,13 +14,8 @@ Spring JSON testing functions for [`kjson`](https://github.com/pwall567/kjson).
 Prior to version 4.4, the library used a flawed technique for acquiring the `JSONConfig` used by the application.
 Sometimes it would work, but many times it wouldn&rsquo;t.
 
-Version 4.4 introduces two new classes:
-- `JSONMockMvc`: a replacement for `MockMvc`
-- `JSONMockServer`: a replacement for `MockRestServiceServer`
-
-These classes should operate identically to the classes they replace, but in order to ensure that JSON serialization and
-deserialization use the correct `JSONConfig`, they are acquired in a different manner, as shown in the documentation
-below.
+**Version 4.4.3 is a further revision of these changes**; the `JSONMockMvc` class introduced with the earlier changes
+has been dropped in favour of a set of extension functions on `MockMvc`.
 
 ## Background
 
@@ -28,7 +23,7 @@ The [Spring Framework](https://spring.io/projects/spring-framework) provides a n
 the `kjson-spring-test` library adds functionality to simplify the use of these tests in conjunction with the
 [`kjson`](https://github.com/pwall567/kjson) library.
 
-## Incoming Requests and `JSONMockMvc`
+## Incoming Requests and `MockMvc`
 
 The testing of incoming REST requests involves setting up incoming calls, and then testing the result to confirm that
 it matches the expected status, data _etc._
@@ -36,24 +31,17 @@ it matches the expected status, data _etc._
 The `kjson-spring-test` library can help with both of these aspects of incoming request testing, including the use of
 the `kjson-test` library for testing / matching the response.
 
-### Acquiring the `JSONMockMvc`
-
-Obtaining the `JSONMockMvc` is actually simpler than for `MockMvc`.
-Instead of using the `@AutoConfigureMockMvc` annotation, simply use:
-```kotlin
-    @Autowired lateinit var jsonMockMvc: JSONMockMvc
-```
-
 ### `getForJSON`, `postForJSON`
 
 The Kotlin extensions for Spring added `get`, `post` functions _etc._ to `MockMvc`, each function taking a lambda using
 a DSL to configure the operation.
-`JSONMockMvc` adds `getForJSON`, `putForJSON`, `postForJSON` and `deleteForJSON`, which set the `Accept` header to
-`application/json` to indicate that the expected response is JSON.
+The `kjson-spring-test` library adds `getForJSON`, `putForJSON`, `postForJSON` and `deleteForJSON`, which set the
+`Accept` header to `application/json` to indicate that the expected response is JSON, along with `putJSON` and
+`postJSON` which do not set the `Accept` header but still allow JSON request content.
 
 For example:
 ```kotlin
-        jsonMockMvc.getForJSON("/testendpoint") {
+        mockMvc.getForJSON("/testendpoint") {
             header("X-Custom-Header", "value")
         }.andExpect {
             // check response
@@ -64,13 +52,14 @@ The functions use a DSL broadly similar to that used by the existing `get` and `
 above, which uses the `header` function from that DSL.
 A major difference is in the handling of the `content` property of the DSL &ndash; if it is set to a `String` or
 `ByteArray` value it will be used as is, but any other type of object will be serialized using the `kjson` library, and
-JSON form will be sent as the content.
+JSON form will be sent as the content (with the `Content-Type` set to `application/json`, unless already set to a
+different value).
 
 ### `contentJSON`
 
 To set the JSON content explicitly as JSON, the `contentJSON` function may be used:
 ```kotlin
-        jsonMockMvc.postForJSON("/testendpoint") {
+        mockMvc.postForJSON("/testendpoint") {
             contentJSON {
                 RequestData(
                     id = customerId,
@@ -84,21 +73,21 @@ To set the JSON content explicitly as JSON, the `contentJSON` function may be us
 There are two forms of the function, one which takes an object to be serialised and another (shown above) that takes a
 lambda which will be invoked to create the object.
 
-The `kjson` serialization will use the `JSONConfig` configuration as described [below](#configuration).
+The `kjson` serialization will use the autowired `JSONConfig` configuration as described [below](#configuration).
 
 ### `matchesJSON`, `contentMatchesJSON`
 
-The results of a `JSONMockMvc` call may be tested using the [`kjson-test`](https://github.com/pwall567/kjson-test)
-library.
+The results of the `MockMvc` extension functions may be tested using the
+[`kjson-test`](https://github.com/pwall567/kjson-test) library.
 
 The Spring Kotlin extensions include the `content` function, which allows the specification of tests against the content
 of the result.
-`JSONMockMvc` adds the `matchesJSON` function within the content DSL;
+`kjson-spring-test` adds the `matchesJSON` function within the content DSL;
 this function parses the result as JSON, and then executes the `kjson-test` test specifications against the parsed
 result.
 For example:
 ```kotlin
-        jsonMockMvc.getForJSON("/testendpoint") {
+        mockMvc.getForJSON("/testendpoint") {
             header("X-Custom-Header", "value")
         }.andExpect {
             status { isOk() }
@@ -113,7 +102,7 @@ For example:
 
 Alternatively, if the only function inside `content` is `matchesJSON`, the two may be combined:
 ```kotlin
-        jsonMockMvc.getForJSON("/testendpoint") {
+        mockMvc.getForJSON("/testendpoint") {
             header("X-Custom-Header", "value")
         }.andExpect {
             status { isOk() }
@@ -134,6 +123,9 @@ The mock server is configured to match one or more possible requests, and to res
 
 Where the input request testing allows the use of the `kjson-test` library to test the result data, client request
 testing allows the use of the same library for matching the requests (if complex matching is required).
+
+In order to have access to the `kjson` serialization and deserialization functions, `kjson-spring-test` uses a wrapper
+class around `MockRestServiceServer` named `JSONMockServer`.
 
 ### Creating a `JSONMockServer`
 
@@ -312,7 +304,7 @@ be shared by both libraries.
 
 ## Dependency Specification
 
-The latest version of the library is 4.4.2 (the version number of this library matches the version of `kjson` with which
+The latest version of the library is 4.4.3 (the version number of this library matches the version of `kjson` with which
 it was built), and it may be obtained from the Maven Central repository.
 (The following dependency declarations assume that the library will be included for test purposes; this is
 expected to be its principal use.)
@@ -324,19 +316,19 @@ This version was built using version 5.3.27 of Spring, and version 2.7.11 of Spr
     <dependency>
       <groupId>io.kjson</groupId>
       <artifactId>kjson-spring</artifactId>
-      <version>4.4.2</version>
+      <version>4.4.3</version>
       <scope>test</scope>
     </dependency>
 ```
 ### Gradle
 ```groovy
-    testImplementation 'io.kjson:kjson-spring:4.4.2'
+    testImplementation 'io.kjson:kjson-spring:4.4.3'
 ```
 ### Gradle (kts)
 ```kotlin
-    testImplementation("io.kjson:kjson-spring:4.4.2")
+    testImplementation("io.kjson:kjson-spring:4.4.3")
 ```
 
 Peter Wall
 
-2023-05-01
+2023-05-02
