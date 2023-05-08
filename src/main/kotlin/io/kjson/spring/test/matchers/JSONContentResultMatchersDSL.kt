@@ -29,6 +29,7 @@ import org.hamcrest.Matcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.springframework.http.MediaType
 import org.springframework.test.util.AssertionErrors.assertEquals
+import org.springframework.test.util.AssertionErrors.fail
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
 import io.kjson.spring.test.JSONResultActions
@@ -68,6 +69,12 @@ class JSONContentResultMatchersDSL(val resultActions: JSONResultActions) {
         assertEquals("Response content", string, resultActions.mvcResult.response.contentAsString)
     }
 
+    fun string(test: (String) -> Boolean) {
+        if (!test(resultActions.mvcResult.response.contentAsString))
+            fail("Response content doesn't match test")
+    }
+
+    @Deprecated("The use of Matcher may be removed in a future version", ReplaceWith("string { test(it) }"))
     fun string(matcher: Matcher<String>) {
         assertThat("Response content", resultActions.mvcResult.response.contentAsString, matcher)
     }
