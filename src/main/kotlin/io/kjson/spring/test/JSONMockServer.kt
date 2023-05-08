@@ -125,4 +125,13 @@ class JSONMockServer(val mockRestServiceServer: MockRestServiceServer, val confi
         block: JSONMockServerDSL.() -> Unit = {}
     ) = mock(expectedCount, HttpMethod.DELETE, uri, block)
 
+    /**
+     * Establish a mock request with the method preset to PATCH.
+     */
+    fun mockPatch(
+        expectedCount: ExpectedCount = ExpectedCount.once(),
+        uri: URI? = null,
+        block: JSONMockServerDSL.() -> Unit = {}
+    ) = mock(expectedCount, HttpMethod.PATCH, uri, block)
+
 }
