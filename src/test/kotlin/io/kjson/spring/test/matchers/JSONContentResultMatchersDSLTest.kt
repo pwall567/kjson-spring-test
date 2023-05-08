@@ -54,6 +54,20 @@ class JSONContentResultMatchersDSLTest {
 
     @Autowired lateinit var mockMvc: MockMvc
 
+    @Test fun `should allow access to response object`() {
+        mockMvc.getForJSON("/testendpoint").andExpect {
+            status { isOk() }
+            expect("""{"date":"2022-07-06","extra":"Hello!"}""") { response.contentAsString }
+        }
+    }
+
+    @Test fun `should allow access to response content string`() {
+        mockMvc.getForJSON("/testendpoint").andExpect {
+            status { isOk() }
+            expect("""{"date":"2022-07-06","extra":"Hello!"}""") { contentAsString }
+        }
+    }
+
     @Test fun `should test content type`() {
         mockMvc.getForJSON("/testendpoint").andExpect {
             status { isOk() }

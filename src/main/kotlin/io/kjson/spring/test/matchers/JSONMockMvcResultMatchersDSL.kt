@@ -26,6 +26,7 @@
 package io.kjson.spring.test.matchers
 
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
 import io.kjson.spring.test.JSONResultActions
@@ -38,6 +39,12 @@ import io.kjson.test.JSONExpect
  */
 @Suppress("MemberVisibilityCanBePrivate")
 class JSONMockMvcResultMatchersDSL(val resultActions: JSONResultActions) {
+
+    val response: MockHttpServletResponse
+        get() = resultActions.mvcResult.response
+
+    val contentAsString: String
+        get() = resultActions.mvcResult.response.contentAsString
 
     fun status(dsl: JSONStatusResultMatchersDSL.() -> Unit) {
         JSONStatusResultMatchersDSL(resultActions.mvcResult.response).dsl()
