@@ -299,8 +299,8 @@ open class SpringAppConfig {
 }
 ```
 
-If the project is also using the [`kjson-spring`](https://github.com/pwall567/kjson-spring), the same configuration may
-be shared by both libraries.
+If the project is also using the [`kjson-spring`](https://github.com/pwall567/kjson-spring) library, the same
+configuration may be shared by both libraries.
 
 ## Dependency Specification
 
@@ -315,18 +315,18 @@ This version was built using version 5.3.27 of Spring, and version 2.7.11 of Spr
 ```xml
     <dependency>
       <groupId>io.kjson</groupId>
-      <artifactId>kjson-spring</artifactId>
+      <artifactId>kjson-spring-test</artifactId>
       <version>4.4.4</version>
       <scope>test</scope>
     </dependency>
 ```
 ### Gradle
 ```groovy
-    testImplementation 'io.kjson:kjson-spring:4.4.4'
+    testImplementation 'io.kjson:kjson-spring-test:4.4.4'
 ```
 ### Gradle (kts)
 ```kotlin
-    testImplementation("io.kjson:kjson-spring:4.4.4")
+    testImplementation("io.kjson:kjson-spring-test:4.4.4")
 ```
 
 Peter Wall
