@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 The major and minor version numbers of this repository (but not patch numbers) match the version numbers of the
 [`kjson`](https://github.com/pwall567/kjson) library used by this Spring library.
 
+## [5.0] - 2023-07-07
+### Changed
+- `pom.xml`: Updated dependency versions
+
 ## [4.4.4] - 2023-05-08
 ### Changed
 - `JSONMockServer`: added `mockPatch` function
